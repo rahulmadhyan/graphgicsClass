@@ -23,7 +23,7 @@ private:
 	{
 		XMFLOAT4 ambientColor;
 		XMFLOAT4 diffuseColor;
-		XMFLOAT4 lightDirection;
+		XMFLOAT3 lightDirection;
 		float padding;
 	};
 
@@ -34,23 +34,23 @@ private:
 	ID3D11Buffer* matrixBuffer;
 	ID3D11Buffer* lightBuffer;
 	
-	bool InitializeShader(ID3D11Device*, HWND hwnd, WCHAR* vsFileName, WCHAR* psFileName);
+	bool InitializeShader(ID3D11Device*, WCHAR* vsFileName, WCHAR* psFileName);
 	void ShutdownShader();
 	void OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR* shaderFileName);
 
-	bool SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT4 lightDirection, ID3D11ShaderResourceView* grassSRV,
+	bool SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection, ID3D11ShaderResourceView* grassSRV,
 		ID3D11ShaderResourceView* slopeSRV, ID3D11ShaderResourceView* rockSRV);
-	void RenderShader(ID3D11DeviceContext*, int);
+	void RenderShader(ID3D11DeviceContext* context, int indexCount);
 
 public:
 	TerrainMesh();
 	~TerrainMesh();
 
-	bool Initialize(ID3D11Device* device, HWND hwnd);
+	bool Initialize(ID3D11Device* device);
 	void Shutdown();
 
-	bool Render(ID3D11DeviceContext* context, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-		XMMATRIX projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT4 lightDirection,
+	bool Render(ID3D11DeviceContext* context, int indexCount, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix,
+		XMFLOAT4X4 projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection,
 		ID3D11ShaderResourceView* grassSRV, ID3D11ShaderResourceView* slopeSRV, ID3D11ShaderResourceView* rockSRV);
 };
 

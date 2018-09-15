@@ -194,7 +194,11 @@ void Game::CreateBasicGeometry()
 	material1 = new Material(vertexShader, pixelShader, srv1, sampler);
 	material2 = new Material(vertexShader, pixelShader, srv2, sampler);
 
-	gameTerrain = new Terrain("Debug/HeightMaps/demo1.bmp", device);
+	gameTerrainMesh = new TerrainMesh();
+	gameTerrainMesh->Initialize(device);
+	gameTerrain = new Terrain("Debug/HeightMaps/demo.png", device);
+	gameTerrain->Initialize(device, context, L"Debug/Textures/grass.dds", L"Debug/Textures/slope.dds", L"Debug/Textures/rock.dds");
+	
 
 	/*entity1 = new GameEntity(mesh1, material1);
 	entities.push_back(entity1);
@@ -291,6 +295,9 @@ void Game::Draw(float deltaTime, float totalTime)
 	//    and then copying that entire buffer to the GPU.  
 	//  - The "SimpleShader" class handles all of that for you.
 	
+	gameTerrainMesh->Render(context, gameTerrain->GetIndexCount(), terrainEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight.AmbientColor, dLight.DiffuseColor, dLight.Direction, gameTerrain->GetGrassTexture(), gameTerrain->GetSlopeTexture(), gameTerrain->GetRockTexture());
+	gameTerrain->Render(context);
+	
 	std::vector<GameEntity*>::iterator it;
 	for (it = entities.begin(); it < entities.end(); it++)
 	{
@@ -316,6 +323,8 @@ void Game::Draw(float deltaTime, float totalTime)
 			0,     // Offset to the first index we want to use
 			0);    // Offset to add to each index when looking up vertices
 	}
+
+	
 	
 	swapChain->Present(0, 0);
 }

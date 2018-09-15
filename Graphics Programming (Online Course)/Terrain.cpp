@@ -10,7 +10,7 @@ Terrain::Terrain(char *fileName, ID3D11Device* device)
 	MultiByteToWideChar(CP_ACP, 0, fileName, -1, wFileName, 4096);
 
 	//LoadImageDataFromFile(&imageData, wFileName, imageBytesPerRow);
-	GenerateRandomHeightMap(512, 512, 4.0, 0.01, 1.1, 1.0, 4, 2018);
+	GenerateRandomHeightMap(512, 512, 5.0, 0.01, 2.0, 1.0, 4, 2018);
 	
 	GenerateMesh(device);
 
@@ -126,9 +126,9 @@ void Terrain::CalculateTextureCoordinates()
 
 void Terrain::LoadTextures(ID3D11Device* device, ID3D11DeviceContext* context, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename)
 {
-	CreateWICTextureFromFile(device, context, grassTextureFilename, 0, &grassTexture);
-	CreateWICTextureFromFile(device, context, slopeTextureFilename, 0, &slopeTexture);
-	CreateWICTextureFromFile(device, context, rockTextureFilename, 0, &rockTexture);
+	HRESULT ok = CreateDDSTextureFromFile(device, context, grassTextureFilename, 0, &grassTexture);
+	HRESULT ok1 = CreateDDSTextureFromFile(device, context, slopeTextureFilename, 0, &slopeTexture);
+	HRESULT ok2 = CreateDDSTextureFromFile(device, context, rockTextureFilename, 0, &rockTexture);
 }
 
 void Terrain::ReleaseTextures()
@@ -171,6 +171,8 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 	int rows = hmInfo.terrainHeight;
 	int columns = hmInfo.terrainWidth;
 
+	index = 0;
+
 	for (int i = 0; i < rows - 1; i++)
 	{
 		for (int j = 0; j < columns - 1; j++)
@@ -190,7 +192,7 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 			}
 
 			vertices[index].Position = hmInfo.heightMap[index3];
-			vertices[index].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+			vertices[index].Normal = XMFLOAT3(0.0f, 0.0f, 0.0f);
 			vertices[index].UV = XMFLOAT2(hmInfo.uv[index3].x, tV);
 			indices[index] = index;
 			index++;
@@ -211,21 +213,21 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 			}
 
 			vertices[index].Position = hmInfo.heightMap[index4];
-			vertices[index].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+			vertices[index].Normal = hmInfo.normal[index4];
 			vertices[index].UV = XMFLOAT2(tU, tV);
 			indices[index] = index;
 			index++;
 
 			// Bottom left
 			vertices[index].Position = hmInfo.heightMap[index1];
-			vertices[index].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+			vertices[index].Normal = hmInfo.normal[index1];
 			vertices[index].UV = hmInfo.uv[index1];
 			indices[index] = index;
 			index++;
 
 			// Bottom left
 			vertices[index].Position = hmInfo.heightMap[index1];
-			vertices[index].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+			vertices[index].Normal = hmInfo.normal[index1];
 			vertices[index].UV = hmInfo.uv[index1];
 			indices[index] = index;
 			index++;
@@ -245,7 +247,7 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 			}
 
 			vertices[index].Position = hmInfo.heightMap[index4];
-			vertices[index].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+			vertices[index].Normal = hmInfo.normal[index1];
 			vertices[index].UV = XMFLOAT2(tU, tV);
 			indices[index] = index;
 			index++;
@@ -260,37 +262,10 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 			}
 
 			vertices[index].Position = hmInfo.heightMap[index2];
-			vertices[index].Normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+			vertices[index].Normal = hmInfo.normal[index2];
 			vertices[index].UV = XMFLOAT2(tU, hmInfo.uv[index2].y);
 			indices[index] = index;
 			index++;
-		}
-	}
-
-	for (int i = 0; i < rows; i++) {
-		for (int j = 0; j < columns; j++) {
-			
-			XMVECTOR oPosition = XMLoadFloat3(&vertices[i * columns + j].Position);
-
-			XMVECTOR aPosition = XMLoadFloat3(&vertices[((i + 1 < rows) ? i + 1 : i) * columns + j].Position);
-			XMVECTOR bPosition = XMLoadFloat3(&vertices[i * columns + ((j - 1 < 0) ? j : j - 1)].Position);
-			XMVECTOR cPosition = XMLoadFloat3(&vertices[((i - 1 < 0) ? i : i - 1) * columns + j].Position);
-			XMVECTOR dPosition = XMLoadFloat3(&vertices[i * columns + ((j + 1 < columns) ? j + 1 : j)].Position);
-
-			XMVECTOR oa = aPosition - oPosition;
-			XMVECTOR ob = bPosition - oPosition;
-			XMVECTOR oc = cPosition - oPosition;
-			XMVECTOR od = dPosition - oPosition;
-			
-			XMVECTOR normal = XMVector2Normalize(
-				XMVector3Normalize(XMVector3Cross(ob, oa)) +
-				XMVector3Normalize(XMVector3Cross(oc, ob)) +
-				XMVector3Normalize(XMVector3Cross(od, oc)) +
-				XMVector3Normalize(XMVector3Cross(oa, od)));
-
-			vertices[i * columns + j].Normal.x = XMVectorGetX(normal);
-			vertices[i * columns + j].Normal.y = XMVectorGetY(normal);
-			vertices[i * columns + j].Normal.z = XMVectorGetZ(normal);
 		}
 	}
 
@@ -639,6 +614,35 @@ void Terrain::GenerateRandomHeightMap(int imageWidth, int imageHeight, double pe
 			hmInfo.heightMap[index].z = (float)j;
 		}
 	}
+
+	hmInfo.normal = new XMFLOAT3[hmInfo.terrainHeight * hmInfo.terrainWidth];
+
+	for (int i = 0; i < hmInfo.terrainHeight; i++) {
+		for (int j = 0; j < hmInfo.terrainWidth; j++) {
+
+			XMVECTOR oPosition = XMLoadFloat3(&hmInfo.heightMap[i * hmInfo.terrainWidth + j]);
+
+			XMVECTOR aPosition = XMLoadFloat3(&hmInfo.heightMap[((i + 1 < hmInfo.terrainHeight) ? i + 1 : i) * hmInfo.terrainWidth + j]);
+			XMVECTOR bPosition = XMLoadFloat3(&hmInfo.heightMap[i * hmInfo.terrainWidth + ((j - 1 < 0) ? j : j - 1)]);
+			XMVECTOR cPosition = XMLoadFloat3(&hmInfo.heightMap[((i - 1 < 0) ? i : i - 1) * hmInfo.terrainWidth + j]);
+			XMVECTOR dPosition = XMLoadFloat3(&hmInfo.heightMap[i * hmInfo.terrainWidth + ((j + 1 < hmInfo.terrainWidth) ? j + 1 : j)]);
+
+			XMVECTOR oa = aPosition - oPosition;
+			XMVECTOR ob = bPosition - oPosition;
+			XMVECTOR oc = cPosition - oPosition;
+			XMVECTOR od = dPosition - oPosition;
+
+			XMVECTOR normal = XMVector2Normalize(
+				XMVector3Normalize(XMVector3Cross(ob, oa)) +
+				XMVector3Normalize(XMVector3Cross(oc, ob)) +
+				XMVector3Normalize(XMVector3Cross(od, oc)) +
+				XMVector3Normalize(XMVector3Cross(oa, od)));
+
+			hmInfo.normal[i * hmInfo.terrainHeight + j].x = XMVectorGetX(normal);
+			hmInfo.normal[i * hmInfo.terrainHeight + j].y = XMVectorGetY(normal);
+			hmInfo.normal[i * hmInfo.terrainHeight + j].z = XMVectorGetZ(normal);
+		}
+	}
 }
 
 bool Terrain::HeightMapLoad(char* filename)
@@ -782,6 +786,6 @@ void Terrain::GenerateMesh(ID3D11Device* device)
 
 	terrainMesh = new Mesh(&vertices[0], numVertices, &indices[0], indices.capacity(), device);
 
-	delete[] hmInfo.heightMap;
-	hmInfo.heightMap = 0;
+	/*delete[] hmInfo.heightMap;
+	hmInfo.heightMap = 0;*/
 }

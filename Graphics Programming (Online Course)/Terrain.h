@@ -3,7 +3,7 @@
 #include <wincodec.h>  
 #include <vector>
 #include <DirectXMath.h>
-#include <WICTextureLoader.h>
+#include <DDSTextureLoader.h>
 #include "DXCore.h"
 #include "TerrainMesh.h"
 #include "Mesh.h"

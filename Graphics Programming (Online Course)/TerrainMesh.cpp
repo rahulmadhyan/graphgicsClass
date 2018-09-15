@@ -14,9 +14,9 @@ TerrainMesh::~TerrainMesh()
 {
 }
 
-bool TerrainMesh::Initialize(ID3D11Device* device, HWND hwnd)
+bool TerrainMesh::Initialize(ID3D11Device* device)
 {
-	bool result = InitializeShader(device, hwnd, L"Debug/TerrainVertexShader.vs", L"Debug/TerrainPixelShader.ps");
+	bool result = InitializeShader(device, L"Debug/TerrainVertexShader.vs", L"Debug/TerrainPixelShader.ps");
 
 	return result;
 }
@@ -26,13 +26,13 @@ void TerrainMesh::Shutdown()
 	ShutdownShader();
 }
 
-bool TerrainMesh::Render(ID3D11DeviceContext* context, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT4 lightDirection,
+bool TerrainMesh::Render(ID3D11DeviceContext* context, int indexCount, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix,
+	XMFLOAT4X4 projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection,
 	ID3D11ShaderResourceView* grassSRV, ID3D11ShaderResourceView* slopeSRV, ID3D11ShaderResourceView* rockSRV)
 {
 	// Set the shader parameters that it will use for rendering
 	bool result = SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix, ambientColor, diffuseColor, lightDirection, grassSRV,
-		slopeSRV, rockSRV);;
+		slopeSRV, rockSRV);
 
 	// Now render the prepared buffers with the shader.
 	RenderShader(context, indexCount);
@@ -40,7 +40,7 @@ bool TerrainMesh::Render(ID3D11DeviceContext* context, int indexCount, XMMATRIX 
 	return true;
 }
 
-bool TerrainMesh::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFileName, WCHAR* psFileName)
+bool TerrainMesh::InitializeShader(ID3D11Device* device, WCHAR* vsFileName, WCHAR* psFileName)
 {
 	HRESULT result;
 	ID3DBlob* errorMesage;
@@ -139,6 +139,8 @@ bool TerrainMesh::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFil
 
 	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
 	result = device->CreateBuffer(&lightBufferDesc, NULL, &lightBuffer);
+
+	return result;
 }
 
 void TerrainMesh::ShutdownShader()
@@ -186,7 +188,7 @@ void TerrainMesh::ShutdownShader()
 	}
 }
 
-bool TerrainMesh::SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT4 lightDirection, ID3D11ShaderResourceView* grassSRV,
+bool TerrainMesh::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 _worldMatrix, XMFLOAT4X4 _viewMatrix, XMFLOAT4X4 _projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection, ID3D11ShaderResourceView* grassSRV,
 	ID3D11ShaderResourceView* slopeSRV, ID3D11ShaderResourceView* rockSRV)
 {
 	HRESULT result;
@@ -194,6 +196,10 @@ bool TerrainMesh::SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX wor
 	unsigned int bufferNumber;
 	MatrixBufferType* dataPtr1;
 	LightBufferType* dataPtr2;
+
+	XMMATRIX worldMatrix = XMLoadFloat4x4(&_worldMatrix); 
+	XMMATRIX viewMatrix = XMLoadFloat4x4(&_viewMatrix);;
+	XMMATRIX projectionMatrix = XMLoadFloat4x4(&_projectionMatrix);
 
 	// Transpose the matrices to prepare them for the shader
 	worldMatrix = XMMatrixTranspose(worldMatrix);
@@ -245,6 +251,8 @@ bool TerrainMesh::SetShaderParameters(ID3D11DeviceContext* context, XMMATRIX wor
 	context->PSSetShaderResources(0, 1, &grassSRV);
 	context->PSSetShaderResources(1, 1, &slopeSRV);
 	context->PSSetShaderResources(2, 1, &rockSRV);
+
+	return true;
 }
 
 void TerrainMesh::RenderShader(ID3D11DeviceContext* context, int indexCount)
