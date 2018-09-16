@@ -12,6 +12,8 @@ Terrain::Terrain(char *fileName, ID3D11Device* device)
 	//LoadImageDataFromFile(&imageData, wFileName, imageBytesPerRow);
 	GenerateRandomHeightMap(512, 512, 5.0, 0.01, 2.0, 1.0, 4, 2018);
 	
+	CalulateNormals();
+
 	GenerateMesh(device);
 
 	//delete imageData;
@@ -28,321 +30,6 @@ Terrain::~Terrain()
 Mesh* Terrain::GetMesh()
 {
 	return terrainMesh; 
-}
-
-void Terrain::Initialize(ID3D11Device* device, ID3D11DeviceContext* context, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
-	WCHAR* rockTextureFilename)
-{
-	CalculateTextureCoordinates();
-
-	LoadTextures(device, context, grassTextureFilename, slopeTextureFilename, rockTextureFilename);
-
-	InitializeBuffers(device);
-}
-
-void Terrain::Shutdown()
-{
-	ReleaseTextures();
-	ShutdownBuffers();
-}
-
-void Terrain::Render(ID3D11DeviceContext* context)
-{
-	RenderBuffers(context);
-}
-
-int Terrain::GetIndexCount()
-{
-	return indexCount;
-}
-
-ID3D11ShaderResourceView* Terrain::GetGrassTexture()
-{
-	return grassTexture;
-}
-
-ID3D11ShaderResourceView* Terrain::GetSlopeTexture()
-{
-	return slopeTexture;
-}
-
-ID3D11ShaderResourceView* Terrain::GetRockTexture()
-{
-	return rockTexture;
-}
-
-void Terrain::CalculateTextureCoordinates()
-{
-	int incrementCount;
-	int tUCount, tVCount;
-
-	float incrementValue;
-	float tUCoordinate;
-	float tVCoordinate;
-
-	// Calculate how much to increment the texture coordinated by
-	incrementValue = (float)TEXTURE_REPEAT / (float)hmInfo.terrainWidth;
-
-	// Calculate how many times to repeat the texture
-	incrementCount = hmInfo.terrainWidth / TEXTURE_REPEAT;
-
-	tUCoordinate = 0.0f;
-	tVCoordinate = 1.0f;
-
-	tUCount = 0;
-	tVCount = 0;
-
-	hmInfo.uv = new XMFLOAT2[hmInfo.terrainHeight * hmInfo.terrainWidth];
-
-	for (int i = 0; i < hmInfo.terrainHeight; i++)
-	{
-		for (int j = 0; j < hmInfo.terrainWidth; j++)
-		{
-			hmInfo.uv[(hmInfo.terrainHeight * i) + j].x = tUCoordinate;
-			hmInfo.uv[(hmInfo.terrainHeight * i) + j].y = tVCoordinate;
-
-			tUCoordinate += incrementValue;
-			tUCount++;
-
-			// Check if at the far right end of the texture and if so then start at the beginning again
-			if (tUCount == incrementCount)
-			{
-				tUCoordinate = 0.0f;
-				tUCount = 0;
-			}
-		}
-	}
-
-	tVCoordinate -= incrementValue;
-	tVCount++;
-
-	// Check if at the top of the texture and if so then start at the bottom again.
-	if (tVCount == incrementCount)
-	{
-		tVCoordinate = 1.0f;
-		tVCount = 0;
-	}
-}
-
-void Terrain::LoadTextures(ID3D11Device* device, ID3D11DeviceContext* context, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename)
-{
-	HRESULT ok = CreateDDSTextureFromFile(device, context, grassTextureFilename, 0, &grassTexture);
-	HRESULT ok1 = CreateDDSTextureFromFile(device, context, slopeTextureFilename, 0, &slopeTexture);
-	HRESULT ok2 = CreateDDSTextureFromFile(device, context, rockTextureFilename, 0, &rockTexture);
-}
-
-void Terrain::ReleaseTextures()
-{
-	if (grassTexture)
-	{
-		delete grassTexture;
-		grassTexture = 0;
-	}
-
-	if (slopeTexture)
-	{
-		delete slopeTexture;
-		slopeTexture = 0;
-	}
-
-	if (rockTexture)
-	{
-		delete rockTexture;
-		rockTexture = 0;
-	}
-}
-
-void Terrain::InitializeBuffers(ID3D11Device* device)
-{
-	Vertex* vertices;
-	unsigned long* indices;
-	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
-	D3D11_SUBRESOURCE_DATA vertexData, indexData;
-	HRESULT result;
-	int index, index1, index2, index3, index4;
-	float tU, tV;
-
-	vertexCount = (hmInfo.terrainWidth - 1) * (hmInfo.terrainHeight - 1) * 6;
-	indexCount = vertexCount;
-
-	vertices = new Vertex[vertexCount];
-	indices = new unsigned long[indexCount];
-
-	int rows = hmInfo.terrainHeight;
-	int columns = hmInfo.terrainWidth;
-
-	index = 0;
-
-	for (int i = 0; i < rows - 1; i++)
-	{
-		for (int j = 0; j < columns - 1; j++)
-		{
-			index1 = (rows * i) + j;          // Bottom left.
-			index2 = (rows * i) + (j + 1);      // Bottom right.
-			index3 = (rows * (i + 1)) + j;      // Upper left.
-			index4 = (rows * (i + 1)) + (j + 1);  // Upper right.
-
-			// Upper left
-			tV = hmInfo.uv[index3].y;
-
-			// Modify the texture coordinates to cover the top edge
-			if (tV == 0)
-			{
-				tV = 0.0f;
-			}
-
-			vertices[index].Position = hmInfo.heightMap[index3];
-			vertices[index].Normal = XMFLOAT3(0.0f, 0.0f, 0.0f);
-			vertices[index].UV = XMFLOAT2(hmInfo.uv[index3].x, tV);
-			indices[index] = index;
-			index++;
-
-			// Upper right
-			tU = hmInfo.uv[index4].x;
-			tV = hmInfo.uv[index4].y;
-
-			// Modify the texture coordinates to cover the top and right edge
-			if (tU == 0.0f)
-			{
-				tU = 1.0f;
-			}
-
-			if (tV == 1.0f)
-			{
-				tV = 0.0f;
-			}
-
-			vertices[index].Position = hmInfo.heightMap[index4];
-			vertices[index].Normal = hmInfo.normal[index4];
-			vertices[index].UV = XMFLOAT2(tU, tV);
-			indices[index] = index;
-			index++;
-
-			// Bottom left
-			vertices[index].Position = hmInfo.heightMap[index1];
-			vertices[index].Normal = hmInfo.normal[index1];
-			vertices[index].UV = hmInfo.uv[index1];
-			indices[index] = index;
-			index++;
-
-			// Bottom left
-			vertices[index].Position = hmInfo.heightMap[index1];
-			vertices[index].Normal = hmInfo.normal[index1];
-			vertices[index].UV = hmInfo.uv[index1];
-			indices[index] = index;
-			index++;
-
-			// Upper right
-			tU = hmInfo.uv[index4].x;
-			tV = hmInfo.uv[index4].y;
-
-			// Modify the texture coordinates to cover the top and right edge.
-			if (tU == 0.0f) 
-			{
-				tU = 1.0f; 
-			}
-			if (tV == 1.0f) 
-			{
-				tV = 0.0f; 
-			}
-
-			vertices[index].Position = hmInfo.heightMap[index4];
-			vertices[index].Normal = hmInfo.normal[index1];
-			vertices[index].UV = XMFLOAT2(tU, tV);
-			indices[index] = index;
-			index++;
-
-			// Bottom right
-			tU = hmInfo.uv[index2].x;
-
-			// Modify the texture coordinates to cover the right edge
-			if (tU == 0.0f)
-			{
-				tU = 1.0f;
-			}
-
-			vertices[index].Position = hmInfo.heightMap[index2];
-			vertices[index].Normal = hmInfo.normal[index2];
-			vertices[index].UV = XMFLOAT2(tU, hmInfo.uv[index2].y);
-			indices[index] = index;
-			index++;
-		}
-	}
-
-	// Set up the description of the static vertex buffer.
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(Vertex) * vertexCount;
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.MiscFlags = 0;
-	vertexBufferDesc.StructureByteStride = 0;
-
-	// Give the subresource structure a pointer to the vertex data.
-	vertexData.pSysMem = vertices;
-	vertexData.SysMemPitch = 0;
-	vertexData.SysMemSlicePitch = 0;
-
-	// Now create the vertex buffer.
-	device->CreateBuffer(&vertexBufferDesc, &vertexData, &vertexBuffer);
-	
-	// Set up the description of the static index buffer.
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(unsigned long) * indexCount;
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.MiscFlags = 0;
-	indexBufferDesc.StructureByteStride = 0;
-
-	// Give the subresource structure a pointer to the index data.
-	indexData.pSysMem = indices;
-	indexData.SysMemPitch = 0;
-	indexData.SysMemSlicePitch = 0;
-
-	// Create the index buffer.
-	result = device->CreateBuffer(&indexBufferDesc, &indexData, &indexBuffer);
-	
-	// Release the arrays now that the buffers have been created and loaded.
-	delete[] vertices;
-	vertices = 0;
-
-	delete[] indices;
-	indices = 0;
-}
-
-void Terrain::ShutdownBuffers()
-{
-	// Release the index buffer.
-	if (indexBuffer)
-	{
-		indexBuffer->Release();
-		indexBuffer = 0;
-	}
-
-	// Release the vertex buffer.
-	if (vertexBuffer)
-	{
-		vertexBuffer->Release();
-		vertexBuffer = 0;
-	}
-}
-
-void Terrain::RenderBuffers(ID3D11DeviceContext* context)
-{
-	unsigned int stride;
-	unsigned int offset;
-
-	// Set vertex buffer stride and offset.
-	stride = sizeof(Vertex);
-	offset = 0;
-
-	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-
-	// Set the index buffer to active in the input assembler so it can be rendered.
-	context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 // get the dxgi format equivilent of a wic format
@@ -702,6 +389,41 @@ bool Terrain::HeightMapLoad(char* filename)
 	return true;
 }
 
+void Terrain::CalulateNormals()
+{
+	int rows = hmInfo.terrainHeight;
+	int columns = hmInfo.terrainWidth;
+
+	hmInfo.normal = new XMFLOAT3[rows * columns];
+
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < columns; j++) {
+
+			XMVECTOR oPosition = XMLoadFloat3(&hmInfo.heightMap[i * columns + j]);
+
+			XMVECTOR aPosition = XMLoadFloat3(&hmInfo.heightMap[((i + 1 < rows) ? i + 1 : i) * columns + j]);
+			XMVECTOR bPosition = XMLoadFloat3(&hmInfo.heightMap[i * columns + ((j - 1 < 0) ? j : j - 1)]);
+			XMVECTOR cPosition = XMLoadFloat3(&hmInfo.heightMap[((i - 1 < 0) ? i : i - 1) * columns + j]);
+			XMVECTOR dPosition = XMLoadFloat3(&hmInfo.heightMap[i * columns + ((j + 1 < columns) ? j + 1 : j)]);
+
+			XMVECTOR oa = aPosition - oPosition;
+			XMVECTOR ob = bPosition - oPosition;
+			XMVECTOR oc = cPosition - oPosition;
+			XMVECTOR od = dPosition - oPosition;
+
+			XMVECTOR normal = XMVector2Normalize(
+				XMVector3Normalize(XMVector3Cross(ob, oa)) +
+				XMVector3Normalize(XMVector3Cross(oc, ob)) +
+				XMVector3Normalize(XMVector3Cross(od, oc)) +
+				XMVector3Normalize(XMVector3Cross(oa, od)));
+
+			hmInfo.normal[i * columns + j].x = XMVectorGetX(normal);
+			hmInfo.normal[i * columns + j].y = XMVectorGetY(normal);
+			hmInfo.normal[i * columns + j].z = XMVectorGetZ(normal);
+		}
+	}
+}
+
 void Terrain::GenerateMesh(ID3D11Device* device)
 {
 	int columns = hmInfo.terrainWidth;
@@ -716,7 +438,7 @@ void Terrain::GenerateMesh(ID3D11Device* device)
 		for (DWORD j = 0; j < columns; ++j) {
 			
 			vertices[i * rows + j].Position = hmInfo.heightMap[i * rows + j];
-			vertices[i * rows + j].Normal = DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f);
+			vertices[i * rows + j].Normal = hmInfo.normal[i * rows + j];
 		}
 	}
 
@@ -756,36 +478,8 @@ void Terrain::GenerateMesh(ID3D11Device* device)
 		texVIndex++;
 	}
 
-	// Normals
-	for (int i = 0; i < rows; i++) {
-		for (int j = 0; j < columns; j++) {
-			
-			XMVECTOR oPosition = XMLoadFloat3(&vertices[i * columns + j].Position);
-
-			XMVECTOR aPosition = XMLoadFloat3(&vertices[((i + 1 < rows) ? i + 1 : i) * columns + j].Position);
-			XMVECTOR bPosition = XMLoadFloat3(&vertices[i * columns + ((j - 1 < 0) ? j : j - 1)].Position);
-			XMVECTOR cPosition = XMLoadFloat3(&vertices[((i - 1 < 0) ? i : i - 1) * columns + j].Position);
-			XMVECTOR dPosition = XMLoadFloat3(&vertices[i * columns + ((j + 1 < columns) ? j + 1 : j)].Position);
-
-			XMVECTOR oa = aPosition - oPosition;
-			XMVECTOR ob = bPosition - oPosition;
-			XMVECTOR oc = cPosition - oPosition;
-			XMVECTOR od = dPosition - oPosition;
-			
-			XMVECTOR normal = XMVector2Normalize(
-				XMVector3Normalize(XMVector3Cross(ob, oa)) +
-				XMVector3Normalize(XMVector3Cross(oc, ob)) +
-				XMVector3Normalize(XMVector3Cross(od, oc)) +
-				XMVector3Normalize(XMVector3Cross(oa, od)));
-
-			vertices[i * columns + j].Normal.x = XMVectorGetX(normal);
-			vertices[i * columns + j].Normal.y = XMVectorGetY(normal);
-			vertices[i * columns + j].Normal.z = XMVectorGetZ(normal);
-		}
-	}
-
 	terrainMesh = new Mesh(&vertices[0], numVertices, &indices[0], indices.capacity(), device);
 
-	/*delete[] hmInfo.heightMap;
-	hmInfo.heightMap = 0;*/
+	delete[] hmInfo.heightMap;
+	hmInfo.heightMap = 0;
 }
