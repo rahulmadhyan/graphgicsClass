@@ -10,7 +10,7 @@ Terrain::Terrain(char *fileName, ID3D11Device* device)
 	MultiByteToWideChar(CP_ACP, 0, fileName, -1, wFileName, 4096);
 
 	//LoadImageDataFromFile(&imageData, wFileName, imageBytesPerRow);
-	GenerateRandomHeightMap(256, 256, 3.0, 0.01, 2.5, 1.0, 4, 2018);
+	GenerateRandomHeightMap(512, 512, 4.0, 0.01, 3.5, 1.0, 4, 2018);
 	
 	CalulateNormals();
 
@@ -374,35 +374,6 @@ bool Terrain::HeightMapLoad(char* filename)
 
 void Terrain::CalulateNormals()
 {
-	/*int rows = hmInfo.terrainHeight;
-	int columns = hmInfo.terrainWidth;
-
-	for (int i = 0; i < columns; i++) {
-		for (int j = 0; j < rows; j++) {
-			XMVECTOR oPosition = XMLoadFloat3(&hmInfo.heightMap[i * rows + j]);
-
-			XMVECTOR aPosition = XMLoadFloat3(&hmInfo.heightMap[((i + 1 < rows) ? i + 1 : i) * rows + j]);
-			XMVECTOR bPosition = XMLoadFloat3(&hmInfo.heightMap[i * rows + ((j - 1 < 0) ? j : j - 1)]);
-			XMVECTOR cPosition = XMLoadFloat3(&hmInfo.heightMap[((i - 1 < 0) ? i : i - 1) * rows + j]);
-			XMVECTOR dPosition = XMLoadFloat3(&hmInfo.heightMap[i * rows + ((j + 1 < columns) ? j + 1 : j)]);
-
-			XMVECTOR oa = aPosition - oPosition;
-			XMVECTOR ob = bPosition - oPosition;
-			XMVECTOR oc = cPosition - oPosition;
-			XMVECTOR od = dPosition - oPosition;
-
-			XMVECTOR normal = XMVector2Normalize(
-				XMVector3Normalize(XMVector3Cross(ob, oa)) +
-				XMVector3Normalize(XMVector3Cross(oc, ob)) +
-				XMVector3Normalize(XMVector3Cross(od, oc)) +
-				XMVector3Normalize(XMVector3Cross(oa, od)));
-
-			hmInfo.normal[i * rows + j].x = XMVectorGetX(normal);
-			hmInfo.normal[i * rows + j].y = XMVectorGetY(normal);
-			hmInfo.normal[i * rows + j].z = XMVectorGetZ(normal);
-		}
-	}*/
-
 	int i, j, index1, index2, index3, index, count;
 	float vertex1[3], vertex2[3], vertex3[3], vector1[3], vector2[3], sum[3], length;
 	XMFLOAT3* normals;
