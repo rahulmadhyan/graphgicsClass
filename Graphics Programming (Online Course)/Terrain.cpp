@@ -298,16 +298,16 @@ void Terrain::GenerateRandomHeightMap(int imageWidth, int imageHeight, double pe
 	hmInfo.normal = new XMFLOAT3[hmInfo.terrainHeight * hmInfo.terrainWidth];
 	hmInfo.uv = new XMFLOAT2[hmInfo.terrainHeight * hmInfo.terrainWidth];
 
-	for (int i = 0; i < hmInfo.terrainHeight; i++) {
-		for (int j = 0; j < hmInfo.terrainWidth; j++) {
+	for (int j = 0; j < hmInfo.terrainHeight; j++) {
+		for (int i = 0; i < hmInfo.terrainWidth; i++) {
 
-			index = (i * hmInfo.terrainHeight) + j;
+			index = (j * hmInfo.terrainHeight) + i;
 
 			float value = perlinNoiseGenerator.GetHeight(i, j);
 
-			hmInfo.heightMap[index].x = (float)j;
+			hmInfo.heightMap[index].x = (float)i;
 			hmInfo.heightMap[index].y = (float)value;
-			hmInfo.heightMap[index].z = (float)i;
+			hmInfo.heightMap[index].z = (float)j;
 
 			hmInfo.normal[index] = XMFLOAT3(0.0f, 0.0f, 0.0f);
 			hmInfo.uv[index] = XMFLOAT2(0.0f, 0.0f);
@@ -374,7 +374,7 @@ bool Terrain::HeightMapLoad(char* filename)
 
 void Terrain::CalulateNormals()
 {
-	int rows = hmInfo.terrainHeight;
+	/*int rows = hmInfo.terrainHeight;
 	int columns = hmInfo.terrainWidth;
 
 	for (int i = 0; i < columns; i++) {
@@ -401,7 +401,133 @@ void Terrain::CalulateNormals()
 			hmInfo.normal[i * rows + j].y = XMVectorGetY(normal);
 			hmInfo.normal[i * rows + j].z = XMVectorGetZ(normal);
 		}
+	}*/
+
+	int i, j, index1, index2, index3, index, count;
+	float vertex1[3], vertex2[3], vertex3[3], vector1[3], vector2[3], sum[3], length;
+	XMFLOAT3* normals;
+
+	m_terrainHeight = hmInfo.terrainHeight;
+	m_terrainWidth = hmInfo.terrainWidth;
+
+	// Create a temporary array to hold the un-normalized normal vectors.
+	normals = new XMFLOAT3[(m_terrainHeight - 1) * (m_terrainWidth - 1)];
+
+	// Go through all the faces in the mesh and calculate their normals.
+	for (j = 0; j < (m_terrainHeight - 1); j++)
+	{
+		for (i = 0; i < (m_terrainWidth - 1); i++)
+		{
+			index1 = (j * m_terrainHeight) + i;
+			index2 = (j * m_terrainHeight) + (i + 1);
+			index3 = ((j + 1) * m_terrainHeight) + i;
+
+			// Get three vertices from the face.
+			vertex1[0] = hmInfo.heightMap[index1].x;
+			vertex1[1] = hmInfo.heightMap[index1].y;
+			vertex1[2] = hmInfo.heightMap[index1].z;
+
+			vertex2[0] = hmInfo.heightMap[index2].x;
+			vertex2[1] = hmInfo.heightMap[index2].y;
+			vertex2[2] = hmInfo.heightMap[index2].z;
+
+			vertex3[0] = hmInfo.heightMap[index3].x;
+			vertex3[1] = hmInfo.heightMap[index3].y;
+			vertex3[2] = hmInfo.heightMap[index3].z;
+
+			// Calculate the two vectors for this face.
+			vector1[0] = vertex1[0] - vertex3[0];
+			vector1[1] = vertex1[1] - vertex3[1];
+			vector1[2] = vertex1[2] - vertex3[2];
+			vector2[0] = vertex3[0] - vertex2[0];
+			vector2[1] = vertex3[1] - vertex2[1];
+			vector2[2] = vertex3[2] - vertex2[2];
+
+			index = (j * (m_terrainHeight - 1)) + i;
+
+			// Calculate the cross product of those two vectors to get the un-normalized value for this face normal.
+			normals[index].x = (vector1[1] * vector2[2]) - (vector1[2] * vector2[1]);
+			normals[index].y = (vector1[2] * vector2[0]) - (vector1[0] * vector2[2]);
+			normals[index].z = (vector1[0] * vector2[1]) - (vector1[1] * vector2[0]);
+		}
 	}
+
+	// Now go through all the vertices and take an average of each face normal 	
+	// that the vertex touches to get the averaged normal for that vertex.
+	for (j = 0; j < m_terrainHeight; j++)
+	{
+		for (i = 0; i < m_terrainWidth; i++)
+		{
+			// Initialize the sum.
+			sum[0] = 0.0f;
+			sum[1] = 0.0f;
+			sum[2] = 0.0f;
+
+			// Initialize the count.
+			count = 0;
+
+			// Bottom left face.
+			if (((i - 1) >= 0) && ((j - 1) >= 0))
+			{
+				index = ((j - 1) * (m_terrainHeight - 1)) + (i - 1);
+
+				sum[0] += normals[index].x;
+				sum[1] += normals[index].y;
+				sum[2] += normals[index].z;
+				count++;
+			}
+
+			// Bottom right face.
+			if ((i < (m_terrainWidth - 1)) && ((j - 1) >= 0))
+			{
+				index = ((j - 1) * (m_terrainHeight - 1)) + i;
+
+				sum[0] += normals[index].x;
+				sum[1] += normals[index].y;
+				sum[2] += normals[index].z;
+				count++;
+			}
+
+			// Upper left face.
+			if (((i - 1) >= 0) && (j < (m_terrainHeight - 1)))
+			{
+				index = (j * (m_terrainHeight - 1)) + (i - 1);
+
+				sum[0] += normals[index].x;
+				sum[1] += normals[index].y;
+				sum[2] += normals[index].z;
+				count++;
+			}
+
+			// Upper right face.
+			if ((i < (m_terrainWidth - 1)) && (j < (m_terrainHeight - 1)))
+			{
+				index = (j * (m_terrainHeight - 1)) + i;
+
+				sum[0] += normals[index].x;
+				sum[1] += normals[index].y;
+				sum[2] += normals[index].z;
+				count++;
+			}
+
+			// Take the average of the faces touching this vertex.
+			sum[0] = (sum[0] / (float)count);
+			sum[1] = (sum[1] / (float)count);
+			sum[2] = (sum[2] / (float)count);
+
+			// Calculate the length of this normal.
+			length = sqrt((sum[0] * sum[0]) + (sum[1] * sum[1]) + (sum[2] * sum[2]));
+
+			// Get an index to the vertex location in the height map array.
+			index = (j * m_terrainHeight) + i;
+
+			// Normalize the final shared normal for this vertex and store it in the height map array.
+			hmInfo.normal[index].x = (sum[0] / length);
+			hmInfo.normal[index].y = (sum[1] / length);
+			hmInfo.normal[index].z = (sum[2] / length);
+		}
+	}
+
 }
 
 void Terrain::GenerateMesh(ID3D11Device* device)
@@ -460,8 +586,8 @@ void Terrain::GenerateMesh(ID3D11Device* device)
 
 	terrainMesh = new Mesh(&vertices[0], numVertices, &indices[0], indices.capacity(), device);
 
-	/*delete[] hmInfo.heightMap;
-	hmInfo.heightMap = 0;*/
+	delete[] hmInfo.heightMap;
+	hmInfo.heightMap = 0;
 }
 
 void Terrain::Initialize(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
@@ -533,13 +659,13 @@ void Terrain::CalculateTextureCoordinates()
 	tvCount = 0;
 	
 	// Loop through the entire height map and calculate the tu and tv texture coordinates for each vertex.
-	for (i = 0; i < m_terrainHeight; i++)
+	for (j = 0; j < m_terrainHeight; j++)
 	{
-		for (j = 0; j < m_terrainWidth; j++)
+		for (i = 0; i < m_terrainWidth; i++)
 		{
 			// Store the texture coordinate in the height map.
-			hmInfo.uv[(m_terrainHeight * i) + j].x = tuCoordinate;
-			hmInfo.uv[(m_terrainHeight * i) + j].y = tvCoordinate;
+			hmInfo.uv[(m_terrainHeight * j) + i].x = tuCoordinate;
+			hmInfo.uv[(m_terrainHeight * j) + i].y = tvCoordinate;
 
 			// Increment the tu texture coordinate by the increment value and increment the index by one.
 			tuCoordinate += incrementValue;
@@ -622,14 +748,14 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 	index = 0;
 
 	// Load the vertex and index array with the terrain data.
-	for (i = 0; i < (m_terrainHeight - 1); i++)
+	for (j = 0; j < (m_terrainHeight - 1); j++)
 	{
-		for (j = 0; j < (m_terrainWidth - 1); j++)
+		for (i = 0; i < (m_terrainWidth - 1); i++)
 		{
-			index1 = (m_terrainHeight * i) + j;          // Bottom left.
-			index2 = (m_terrainHeight * i) + (j + 1);      // Bottom right.
-			index3 = (m_terrainHeight * (i + 1)) + j;      // Upper left.
-			index4 = (m_terrainHeight * (i + 1)) + (j + 1);  // Upper right.
+			index1 = (m_terrainHeight * j) + i;          // Bottom left.
+			index2 = (m_terrainHeight * j) + (i + 1);      // Bottom right.
+			index3 = (m_terrainHeight * (j + 1)) + i;      // Upper left.
+			index4 = (m_terrainHeight * (j + 1)) + (i + 1);  // Upper right.
 
 			// Upper left.
 			tv = hmInfo.uv[index3].y;
