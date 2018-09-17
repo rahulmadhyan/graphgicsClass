@@ -7,6 +7,7 @@
 #include "Camera.h"
 #include "Lights.h"
 #include "Terrain.h"
+#include "TerrainShader.h"
 #include "WICTextureLoader.h"
 #include <DirectXMath.h>
 
@@ -64,6 +65,7 @@ private:
 
 	//Terrain
 	Terrain* gameTerrain;
+	TerrainShader* gameTerrainShader;
 
 	//Collection of entitites
 	std::vector<GameEntity*> entities;

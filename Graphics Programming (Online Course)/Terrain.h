@@ -3,6 +3,7 @@
 #include <wincodec.h>  
 #include <vector>
 #include <DirectXMath.h>
+#include <DDSTextureLoader.h>
 #include "DXCore.h"
 #include "Mesh.h"
 #include "PerlinNoise.h"
@@ -28,7 +29,19 @@ public:
 
 	Mesh* GetMesh();
 
+	void Initialize(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
+		WCHAR* rockTextureFilename);
+	void Shutdown();
+	void Render(ID3D11DeviceContext*);
+
+	int GetIndexCount();
+
+	ID3D11ShaderResourceView* GetGrassTexture();
+	ID3D11ShaderResourceView* GetSlopeTexture();
+	ID3D11ShaderResourceView* GetRockTexture();
+
 private:
+
 	DXGI_FORMAT GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID);
 	WICPixelFormatGUID GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID);
 	int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
@@ -46,5 +59,19 @@ private:
 	Mesh* terrainMesh;
 
 	PerlinNoise perlinNoiseGenerator;
+
+	void CalculateTextureCoordinates();
+
+	void LoadTextures(ID3D11Device*, WCHAR*, WCHAR*, WCHAR*);
+	void ReleaseTextures();
+
+	void InitializeBuffers(ID3D11Device*);
+	void ShutdownBuffers();
+	void RenderBuffers(ID3D11DeviceContext*);
+
+	int m_terrainWidth, m_terrainHeight;
+	int m_vertexCount, m_indexCount;
+	ID3D11Buffer *m_vertexBuffer, *m_indexBuffer;
+	ID3D11ShaderResourceView *m_GrassTexture, *m_SlopeTexture, *m_RockTexture;
 };
 

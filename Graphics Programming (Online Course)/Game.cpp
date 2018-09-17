@@ -55,6 +55,7 @@ Game::~Game()
 	delete material2;
 
 	delete gameTerrain;
+	delete gameTerrainShader;
 
 	std::vector<GameEntity*>::iterator it;
 	for (it = entities.begin(); it < entities.end(); it++)
@@ -195,7 +196,8 @@ void Game::CreateBasicGeometry()
 	material2 = new Material(vertexShader, pixelShader, srv2, sampler);
 
 	gameTerrain = new Terrain("Debug/HeightMaps/demo.png", device);
-	
+	gameTerrain->Initialize(device, L"Debug/Textures/grass.dds", L"Debug/Textures/slope.dds", L"Debug/Textures/rock.dds");
+
 	/*entity1 = new GameEntity(mesh1, material1);
 	entities.push_back(entity1);
 	entity2 = new GameEntity(mesh1, material1);
@@ -206,13 +208,17 @@ void Game::CreateBasicGeometry()
 	entities.push_back(entity4);
 	entity5 = new GameEntity(mesh2, material1);
 	entities.push_back(entity5);*/
+	
 	terrainEntity = new GameEntity(gameTerrain->GetMesh(), material1);
-	entities.push_back(terrainEntity);
+	//entities.push_back(terrainEntity);
 
-	terrainEntity->SetTranslation(-10.0f, -10.0f, 0.0f);
+	terrainEntity->SetTranslation(0.0f, 0.0f, 10.0f);
 	terrainEntity->SetRotation(0.0f, 0.0f, 0.0f);
-	terrainEntity->SetScale(0.2f, 0.2f, 0.2f);
+	terrainEntity->SetScale(0.1, 0.1f, 0.1f);
 	terrainEntity->SetWorldMatrix();
+
+	gameTerrainShader = new TerrainShader();
+	gameTerrainShader->Initialize(device);
 }
 
 void Game::CreateCamera()
@@ -316,6 +322,11 @@ void Game::Draw(float deltaTime, float totalTime)
 			0,     // Offset to the first index we want to use
 			0);    // Offset to add to each index when looking up vertices
 	}
+
+	gameTerrain->Render(context);
+	gameTerrainShader->Render(context, gameTerrain->GetIndexCount(), terrainEntity->GetWorldMatrix(),
+		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1.AmbientColor, dLight1.DiffuseColor,
+		dLight1.Direction, gameTerrain->GetGrassTexture(), gameTerrain->GetSlopeTexture(), gameTerrain->GetRockTexture());
 
 	swapChain->Present(0, 0);
 }

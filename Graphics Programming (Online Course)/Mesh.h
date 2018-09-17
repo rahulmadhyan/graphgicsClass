@@ -17,7 +17,7 @@ public:
 	~Mesh();
 
 	void CreateBuffers(Vertex* vertices, int numberOfVertices, UINT* indices, int numberOfIndices, ID3D11Device* device);
-
+	void CreateTerrainBuffers(Vertex* vertices, int numberOfVertices, UINT* indices, int numberOfIndices, ID3D11Device* device);
 	ID3D11Buffer* GetVertextBuffer() const;
 	ID3D11Buffer* GetIndexBuffer() const;
 	int GetIndexCount() const;
