@@ -16,9 +16,6 @@ Terrain::Terrain(char *fileName, ID3D11Device* device)
 
 	//GenerateMesh(device);
 
-	//delete imageData;
-	imageData = 0;
-
 	delete wFileName;
 
 	m_vertexBuffer = 0;
@@ -32,6 +29,18 @@ Terrain::Terrain(char *fileName, ID3D11Device* device)
 Terrain::~Terrain()
 {
 	delete terrainMesh;
+	terrainMesh = 0;
+
+	delete[] hmInfo.heightMap;
+	hmInfo.heightMap = 0;
+
+	delete[] hmInfo.normal;
+	hmInfo.normal = 0;
+
+	delete[] hmInfo.uv;
+	hmInfo.uv = 0;
+
+	Shutdown();
 }
 
 Mesh* Terrain::GetMesh()
@@ -280,6 +289,9 @@ int Terrain::LoadImageDataFromFile(BYTE** imageData, LPCWSTR filename, int &byte
 		} 
 	}
 
+	delete imageData;
+	imageData = 0;
+
 	delete height;
 	height = 0;
 
@@ -498,7 +510,8 @@ void Terrain::CalulateNormals()
 			hmInfo.normal[index].z = (sum[2] / length);
 		}
 	}
-
+	delete normals;
+	normals = 0;
 }
 
 void Terrain::GenerateMesh(ID3D11Device* device)
@@ -556,9 +569,6 @@ void Terrain::GenerateMesh(ID3D11Device* device)
 	}
 
 	terrainMesh = new Mesh(&vertices[0], numVertices, &indices[0], indices.capacity(), device);
-
-	delete[] hmInfo.heightMap;
-	hmInfo.heightMap = 0;
 }
 
 void Terrain::Initialize(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
@@ -581,7 +591,7 @@ void Terrain::Shutdown()
 	ReleaseTextures();
 
 	// Release the vertex and index buffer.
-	ShutdownBuffers();
+	//ShutdownBuffers();
 }
 
 void Terrain::Render(ID3D11DeviceContext* deviceContext)
@@ -665,9 +675,9 @@ void Terrain::CalculateTextureCoordinates()
 
 void Terrain::LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename)
 {
-	HRESULT ok1 = CreateDDSTextureFromFile(device, grassTextureFilename, 0, &m_GrassTexture);
-	HRESULT ok2 = CreateDDSTextureFromFile(device, slopeTextureFilename, 0, &m_SlopeTexture);
-	HRESULT ok3 = CreateDDSTextureFromFile(device, rockTextureFilename, 0, &m_RockTexture);
+	CreateDDSTextureFromFile(device, grassTextureFilename, 0, &m_GrassTexture);
+	CreateDDSTextureFromFile(device, slopeTextureFilename, 0, &m_SlopeTexture);
+	CreateDDSTextureFromFile(device, rockTextureFilename, 0, &m_RockTexture);
 }
 
 void Terrain::ReleaseTextures()
@@ -675,20 +685,17 @@ void Terrain::ReleaseTextures()
 	// Release the texture objects.
 	if (m_GrassTexture)
 	{
-		delete m_GrassTexture;
-		m_GrassTexture = 0;
+		m_GrassTexture->Release();
 	}
 
 	if (m_SlopeTexture)
 	{
-		delete m_SlopeTexture;
-		m_SlopeTexture = 0;
+		m_SlopeTexture->Release();
 	}
 
 	if (m_RockTexture)
 	{
-		delete m_RockTexture;
-		m_RockTexture = 0;
+		m_RockTexture->Release();
 	}
 }
 
@@ -800,7 +807,7 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 
 	m_vertexBuffer = terrainMesh->GetVertextBuffer();
 	m_indexBuffer = terrainMesh->GetIndexBuffer();
-
+	
 	// Release the arrays now that the buffers have been created and loaded.
 	delete[] vertices;
 	vertices = 0;
@@ -815,23 +822,19 @@ void Terrain::ShutdownBuffers()
 	if (m_indexBuffer)
 	{
 		m_indexBuffer->Release();
-		m_indexBuffer = 0;
 	}
 
 	// Release the vertex buffer.
 	if (m_vertexBuffer)
 	{
 		m_vertexBuffer->Release();
-		m_vertexBuffer = 0;
 	}
-
 }
 
 void Terrain::RenderBuffers(ID3D11DeviceContext* deviceContext)
 {
 	unsigned int stride;
 	unsigned int offset;
-
 
 	// Set vertex buffer stride and offset.
 	stride = sizeof(Vertex);

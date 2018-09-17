@@ -13,6 +13,7 @@ TerrainShader::TerrainShader()
 
 TerrainShader::~TerrainShader()
 {
+	Shutdown();
 }
 
 void TerrainShader::Initialize(ID3D11Device* device)
@@ -42,7 +43,6 @@ void TerrainShader::Render(ID3D11DeviceContext* deviceContext, int indexCount, X
 void TerrainShader::InitializeShader(ID3D11Device* device, WCHAR* vsFilename, WCHAR* psFilename)
 {
 	HRESULT result;
-	ID3DBlob* errorMessage;
 	ID3DBlob* vertexShaderBuffer;
 	ID3DBlob* pixelShaderBuffer;
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
@@ -52,18 +52,18 @@ void TerrainShader::InitializeShader(ID3D11Device* device, WCHAR* vsFilename, WC
 	D3D11_BUFFER_DESC lightBufferDesc;
 
 	// Initialize the pointers this function will use to null.
-	errorMessage = 0;
+	//errorMessage = 0;
 	vertexShaderBuffer = 0;
 	pixelShaderBuffer = 0;
 
 	// Compile the vertex shader code.
 	result = D3DCompileFromFile(vsFilename, NULL, NULL, "main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
-		&vertexShaderBuffer, &errorMessage);
+		&vertexShaderBuffer, 0);
 
 
 	// Compile the pixel shader code.
 	result = D3DCompileFromFile(psFilename, NULL, NULL, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
-		&pixelShaderBuffer, &errorMessage);
+		&pixelShaderBuffer, 0);
 
 	// Create the vertex shader from the buffer.
 	result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &m_vertexShader);
@@ -195,8 +195,6 @@ void TerrainShader::ShutdownShader()
 		m_vertexShader->Release();
 		m_vertexShader = 0;
 	}
-
-	return;
 }
 
 void TerrainShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix,

@@ -56,6 +56,8 @@ Game::~Game()
 
 	delete gameTerrain;
 	delete gameTerrainShader;
+	
+	delete terrainEntity;
 
 	std::vector<GameEntity*>::iterator it;
 	for (it = entities.begin(); it < entities.end(); it++)

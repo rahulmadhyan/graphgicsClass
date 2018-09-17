@@ -186,8 +186,14 @@ Mesh::Mesh(char* fileName, ID3D11Device* device)
 
 Mesh::~Mesh()
 {
-	if (vertexBuffer) { vertexBuffer->Release(); }
-	if (indexBuffer) { indexBuffer->Release(); }
+	if (vertexBuffer) {
+		vertexBuffer->Release(); 
+		vertexBuffer = 0;
+	}
+	if (indexBuffer) {
+		indexBuffer->Release(); 
+		indexBuffer = 0;
+	}
 }
 
 void Mesh::CreateBuffers(Vertex* vertices, int numberOfVertices, UINT* indices, int numberOfIndices, ID3D11Device* device)
