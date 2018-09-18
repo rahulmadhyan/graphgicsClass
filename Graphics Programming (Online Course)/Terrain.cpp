@@ -9,21 +9,27 @@ Terrain::Terrain(char *fileName, ID3D11Device* device)
 	wchar_t* wFileName = new wchar_t[4096];
 	MultiByteToWideChar(CP_ACP, 0, fileName, -1, wFileName, 4096);
 
-	//LoadImageDataFromFile(&imageData, wFileName, imageBytesPerRow);
-	GenerateRandomHeightMap(512, 512, 4.0, 0.01, 3.5, 1.0, 4, 2018);
-	
+	LoadImageDataFromFile(&imageData, wFileName, imageBytesPerRow);
+	delete wFileName;
+	delete imageData;
+
 	CalulateNormals();
 
-	//GenerateMesh(device);
+	GenerateMesh(device);
+}
 
-	delete wFileName;
-
+Terrain::Terrain(int imageWidth, int imageHeight, double persistence, double frequency, double amplitude, double smoothing, int octaves, int randomSeed)
+{
 	m_vertexBuffer = 0;
 	m_indexBuffer = 0;
 
 	m_GrassTexture = 0;
 	m_SlopeTexture = 0;
 	m_RockTexture = 0;
+
+	GenerateRandomHeightMap(imageWidth, imageHeight, persistence, frequency, amplitude, smoothing, octaves, randomSeed);
+
+	CalulateNormals();
 }
 
 Terrain::~Terrain()
@@ -40,12 +46,58 @@ Terrain::~Terrain()
 	delete[] hmInfo.uv;
 	hmInfo.uv = 0;
 
-	Shutdown();
+	//Shutdown();
+}
+
+int Terrain::GetIndexCount()
+{
+	return m_indexCount;
+}
+
+ID3D11ShaderResourceView* Terrain::GetGrassTexture()
+{
+	return m_GrassTexture;
+}
+
+ID3D11ShaderResourceView* Terrain::GetSlopeTexture()
+{
+	return m_SlopeTexture;
+}
+
+ID3D11ShaderResourceView* Terrain::GetRockTexture()
+{
+	return m_RockTexture;
 }
 
 Mesh* Terrain::GetMesh()
 {
 	return terrainMesh; 
+}
+
+void Terrain::Initialize(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
+	WCHAR* rockTextureFilename)
+{
+	m_terrainHeight = hmInfo.terrainHeight;
+	m_terrainWidth = hmInfo.terrainWidth;
+
+	// Calculate the texture coordinates.
+	CalculateTextureCoordinates();
+
+	LoadTextures(device, grassTextureFilename, slopeTextureFilename, rockTextureFilename);
+
+	InitializeBuffers(device);
+}
+
+void Terrain::Render(ID3D11DeviceContext* deviceContext)
+{
+	// Put the vertex and index buffers on the graphics pipeline to prepare them for drawing.
+	RenderBuffers(deviceContext);
+}
+
+void Terrain::Shutdown()
+{
+	// Release the textures.
+	ReleaseTextures();
 }
 
 // get the dxgi format equivilent of a wic format
@@ -253,6 +305,8 @@ int Terrain::LoadImageDataFromFile(BYTE** imageData, LPCWSTR filename, int &byte
 	hmInfo.terrainWidth = textureWidth;
 	hmInfo.terrainHeight = textureHeight;
 	hmInfo.heightMap = new DirectX::XMFLOAT3[hmInfo.terrainHeight * hmInfo.terrainWidth];
+	hmInfo.normal = new XMFLOAT3[hmInfo.terrainHeight * hmInfo.terrainWidth];
+	hmInfo.uv = new XMFLOAT2[hmInfo.terrainHeight * hmInfo.terrainWidth];
 
 	int k = 0;
 	BYTE* height = (BYTE*)malloc(imageSize);
@@ -274,28 +328,85 @@ int Terrain::LoadImageDataFromFile(BYTE** imageData, LPCWSTR filename, int &byte
 
 	k = 0;
 
-	for (int i = 0; i < hmInfo.terrainHeight; i++) {
-		for (int j = 0; j < hmInfo.terrainWidth; j++) {
+	for (int j = 0; j < hmInfo.terrainHeight; j++) {
+		for (int i = 0; i < hmInfo.terrainWidth; i++) {
 
-			index = (i * hmInfo.terrainHeight) + j;
+			index = (j * hmInfo.terrainHeight) + i;
 
 			currentHeight = *(height + k);
 
-			hmInfo.heightMap[index].x = (float)i;
+			hmInfo.heightMap[index].x = (float)j;
 			hmInfo.heightMap[index].y = (float)currentHeight / heightFactor;
-			hmInfo.heightMap[index].z = (float)j;
+			hmInfo.heightMap[index].z = (float)i;
+
+			hmInfo.normal[index] = XMFLOAT3(0.0f, 0.0f, 0.0f);
+			hmInfo.uv[index] = XMFLOAT2(0.0f, 0.0f);
 
 			k += 4;
 		} 
 	}
 
-	delete imageData;
-	imageData = 0;
-
 	delete height;
 	height = 0;
 
 	return imageSize;
+}
+
+void Terrain::GenerateMesh(ID3D11Device* device)
+{
+	int columns = hmInfo.terrainWidth;
+	int rows = hmInfo.terrainHeight;
+
+	numVertices = rows * columns;
+	numFaces = (rows - 1) * (columns - 1) * 2;
+
+	std::vector<Vertex> vertices(numVertices);
+
+	for (DWORD i = 0; i < rows; ++i) {
+		for (DWORD j = 0; j < columns; ++j) {
+
+			vertices[i * rows + j].Position = hmInfo.heightMap[i * rows + j];
+			vertices[i * rows + j].Normal = hmInfo.normal[i * rows + j];
+		}
+	}
+
+	std::vector<UINT> indices(numFaces * 3);
+
+	int k = 0;
+	int texUIndex = 0;
+	int texVIndex = 0;
+	for (UINT i = 0; i < rows - 1; i++)
+	{
+		for (UINT j = 0; j < columns - 1; j++)
+		{
+			indices[k] = i * rows + j;        // Bottom left of quad
+			vertices[i* rows + j].UV = XMFLOAT2(texUIndex + 0.0f, texVIndex + 1.0f);
+
+			indices[k + 1] = i * rows + j + 1;        // Bottom right of quad
+			vertices[i* rows + j + 1].UV = XMFLOAT2(texUIndex + 1.0f, texVIndex + 1.0f);
+
+			indices[k + 2] = (i + 1) * rows + j;    // Top left of quad
+			vertices[(i + 1) * rows + j].UV = XMFLOAT2(texUIndex + 0.0f, texVIndex + 0.0f);
+
+
+			indices[k + 3] = (i + 1) * rows + j;    // Top left of quad
+			vertices[(i + 1) * rows + j].UV = XMFLOAT2(texUIndex + 0.0f, texVIndex + 0.0f);
+
+			indices[k + 4] = i * rows + j + 1;        // Bottom right of quad
+			vertices[i * rows + j + 1].UV = XMFLOAT2(texUIndex + 1.0f, texVIndex + 1.0f);
+
+			indices[k + 5] = (i + 1) * rows + j + 1;    // Top right of quad
+			vertices[(i + 1) * rows + j + 1].UV = XMFLOAT2(texUIndex + 1.0f, texVIndex + 0.0f);
+
+			k += 6; // next quad
+
+			texUIndex++;
+		}
+		texUIndex = 0;
+		texVIndex++;
+	}
+
+	terrainMesh = new Mesh(&vertices[0], numVertices, &indices[0], indices.capacity(), device);
 }
 
 void Terrain::GenerateRandomHeightMap(int imageWidth, int imageHeight, double persistence, double frequency, double amplitude, double smoothing, int octaves, int randomSeed)
@@ -325,63 +436,6 @@ void Terrain::GenerateRandomHeightMap(int imageWidth, int imageHeight, double pe
 			hmInfo.uv[index] = XMFLOAT2(0.0f, 0.0f);
 		}
 	}
-}
-
-bool Terrain::HeightMapLoad(char* filename)
-{
-	FILE *filePtr;
-	BITMAPFILEHEADER bitmapFileHeader;
-	BITMAPINFOHEADER bitmapInfoHeader;
-
-	int imageSize;
-	int index;
-	unsigned char height;
-
-	filePtr = fopen(filename, "rb");
-	if (filePtr == NULL)
-		return 0;
-
-	fread(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
-	fread(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr);
-
-	hmInfo.terrainWidth = bitmapInfoHeader.biWidth;
-	hmInfo.terrainHeight = bitmapInfoHeader.biHeight;
-
-	imageSize = hmInfo.terrainHeight * hmInfo.terrainWidth * 3;
-
-	unsigned char* bitmapImage = new unsigned char[imageSize];
-
-	fseek(filePtr, bitmapFileHeader.bfOffBits, SEEK_SET);
-
-	fread(bitmapImage, 1, imageSize, filePtr);
-
-	fclose(filePtr);
-
-	hmInfo.heightMap = new DirectX::XMFLOAT3[hmInfo.terrainHeight * hmInfo.terrainWidth];
-
-	int k = 0;
-
-	float heightFactor = 10.0f;
-
-	for (int i = 0; i < hmInfo.terrainHeight; i++) {
-		for (int j = 0; i < hmInfo.terrainWidth; j++) {
-			
-			height = bitmapImage[k];
-			
-			index = (i * hmInfo.terrainHeight) + j;
-		
-			hmInfo.heightMap[index].x = (float)i;
-			hmInfo.heightMap[index].y = (float)height / heightFactor;
-			hmInfo.heightMap[index].z = (float)j;
-
-			k += 3;
-		}
-	}
-
-	delete[] bitmapImage;
-	bitmapImage = 0;
-
-	return true;
 }
 
 void Terrain::CalulateNormals()
@@ -514,112 +568,6 @@ void Terrain::CalulateNormals()
 	normals = 0;
 }
 
-void Terrain::GenerateMesh(ID3D11Device* device)
-{
-	int columns = hmInfo.terrainWidth;
-	int rows = hmInfo.terrainHeight;
-
-	numVertices = rows * columns;
-	numFaces = (rows - 1) * (columns - 1) * 2;
-
-	std::vector<Vertex> vertices(numVertices);
-
-	for (DWORD i = 0; i < rows; ++i) {
-		for (DWORD j = 0; j < columns; ++j) {
-			
-			vertices[i * rows + j].Position = hmInfo.heightMap[i * rows + j];
-			vertices[i * rows + j].Normal = hmInfo.normal[i * rows + j];
-		}
-	}
-
-	std::vector<UINT> indices(numFaces * 3);
-
-	int k = 0;
-	int texUIndex = 0;
-	int texVIndex = 0;
-	for (UINT i = 0; i < rows - 1; i++)
-	{
-		for (UINT j = 0; j < columns - 1; j++)
-		{
-			indices[k] = i * rows + j;        // Bottom left of quad
-			vertices[i* rows + j].UV = XMFLOAT2(texUIndex + 0.0f, texVIndex + 1.0f);
-
-			indices[k + 1] = i * rows + j + 1;        // Bottom right of quad
-			vertices[i* rows + j + 1].UV = XMFLOAT2(texUIndex + 1.0f, texVIndex + 1.0f);
-
-			indices[k + 2] = (i + 1) * rows + j;    // Top left of quad
-			vertices[(i + 1) * rows + j].UV = XMFLOAT2(texUIndex + 0.0f, texVIndex + 0.0f);
-
-
-			indices[k + 3] = (i + 1) * rows + j;    // Top left of quad
-			vertices[(i + 1) * rows + j].UV = XMFLOAT2(texUIndex + 0.0f, texVIndex + 0.0f);
-
-			indices[k + 4] = i * rows + j + 1;        // Bottom right of quad
-			vertices[i * rows + j + 1].UV = XMFLOAT2(texUIndex + 1.0f, texVIndex + 1.0f);
-
-			indices[k + 5] = (i + 1) * rows + j + 1;    // Top right of quad
-			vertices[(i + 1) * rows + j + 1].UV = XMFLOAT2(texUIndex + 1.0f, texVIndex + 0.0f);
-
-			k += 6; // next quad
-
-			texUIndex++;
-		}
-		texUIndex = 0;
-		texVIndex++;
-	}
-
-	terrainMesh = new Mesh(&vertices[0], numVertices, &indices[0], indices.capacity(), device);
-}
-
-void Terrain::Initialize(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
-	WCHAR* rockTextureFilename)
-{
-	m_terrainHeight = hmInfo.terrainHeight;
-	m_terrainWidth = hmInfo.terrainWidth;
-
-	// Calculate the texture coordinates.
-	CalculateTextureCoordinates();
-	
-	LoadTextures(device, grassTextureFilename, slopeTextureFilename, rockTextureFilename);
-	
-	InitializeBuffers(device);
-}
-
-void Terrain::Shutdown()
-{
-	// Release the textures.
-	ReleaseTextures();
-
-	// Release the vertex and index buffer.
-	//ShutdownBuffers();
-}
-
-void Terrain::Render(ID3D11DeviceContext* deviceContext)
-{
-	// Put the vertex and index buffers on the graphics pipeline to prepare them for drawing.
-	RenderBuffers(deviceContext);
-}
-
-int Terrain::GetIndexCount()
-{
-	return m_indexCount;
-}
-
-ID3D11ShaderResourceView* Terrain::GetGrassTexture()
-{
-	return m_GrassTexture;
-}
-
-ID3D11ShaderResourceView* Terrain::GetSlopeTexture()
-{
-	return m_SlopeTexture;
-}
-
-ID3D11ShaderResourceView* Terrain::GetRockTexture()
-{
-	return m_RockTexture;
-}
-
 void Terrain::CalculateTextureCoordinates()
 {
 	int incrementCount, i, j, tuCount, tvCount;
@@ -721,7 +669,7 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 
 	// Create the index array.
 	indices = new UINT[m_indexCount];
-	
+
 	// Initialize the index to the vertex buffer.
 	index = 0;
 
@@ -807,7 +755,7 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 
 	m_vertexBuffer = terrainMesh->GetVertextBuffer();
 	m_indexBuffer = terrainMesh->GetIndexBuffer();
-	
+
 	// Release the arrays now that the buffers have been created and loaded.
 	delete[] vertices;
 	vertices = 0;

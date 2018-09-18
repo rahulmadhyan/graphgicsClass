@@ -54,6 +54,7 @@ Game::~Game()
 	delete material1;
 	delete material2;
 
+	gameTerrain->Shutdown();
 	delete gameTerrain;
 	delete gameTerrainShader;
 	
@@ -197,7 +198,8 @@ void Game::CreateBasicGeometry()
 	material1 = new Material(vertexShader, pixelShader, srv1, sampler);
 	material2 = new Material(vertexShader, pixelShader, srv2, sampler);
 
-	gameTerrain = new Terrain("Debug/HeightMaps/demo.png", device);
+	//gameTerrain = new Terrain("Debug/HeightMap/demo.png", device);
+	gameTerrain = new Terrain(256, 256, 3.0, 0.01, 2.0, 1.25, 4, 2018);
 	gameTerrain->Initialize(device, L"Debug/Textures/grass.dds", L"Debug/Textures/slope.dds", L"Debug/Textures/rock.dds");
 
 	/*entity1 = new GameEntity(mesh1, material1);
