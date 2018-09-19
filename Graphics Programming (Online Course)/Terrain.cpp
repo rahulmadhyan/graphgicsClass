@@ -335,9 +335,9 @@ int Terrain::LoadImageDataFromFile(BYTE** imageData, LPCWSTR filename, int &byte
 
 			currentHeight = *(height + k);
 
-			hmInfo.heightMap[index].x = (float)j;
+			hmInfo.heightMap[index].x = (float)i;
 			hmInfo.heightMap[index].y = (float)currentHeight / heightFactor;
-			hmInfo.heightMap[index].z = (float)i;
+			hmInfo.heightMap[index].z = (float)j;
 
 			hmInfo.normal[index] = XMFLOAT3(0.0f, 0.0f, 0.0f);
 			hmInfo.uv[index] = XMFLOAT2(0.0f, 0.0f);
