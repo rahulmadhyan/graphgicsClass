@@ -20,7 +20,18 @@ struct PixelInputType
 	float3 normal : NORMAL;
 };
 
-float3 SampleDetailTriplanar(float3 uvw, float3 N, float index)
+float4 Blend(float4 tex1, float blend1, float4 tex2, float blend2) {
+	float depth = 0.2f;
+
+	float ma = max(tex1.w + blend1, tex2.w + blend2) - depth;
+
+	float b1 = max(tex1.w + blend1 - ma, 0);
+	float b2 = max(tex2.w + blend2 - ma, 0);
+
+	return (tex1 * b1 + tex2 * b2) / (b1 + b2);
+}
+
+float4 SampleDetailTriplanar(float3 uvw, float3 N, float index)
 {
 	float tighten = 0.4679f;
 	float3 blending = saturate(abs(N) - tighten);
@@ -28,20 +39,20 @@ float3 SampleDetailTriplanar(float3 uvw, float3 N, float index)
 	float b = blending.x + blending.y + blending.z;
 	blending /= float3(b, b, b);
 
-	float3 x = grassTexture.Sample(SampleType, uvw.yz).xyz;
-	float3 y = slopeTexture.Sample(SampleType, uvw.xz).xyz;
-	float3 z = rockTexture.Sample(SampleType, uvw.xy).xyz;
+	float4 x = grassTexture.Sample(SampleType, uvw.yz).xyzw;
+	float4 y = slopeTexture.Sample(SampleType, uvw.xz).xyzw;
+	float4 z = rockTexture.Sample(SampleType, uvw.xy).xyzw;
 
 	return x * blending.x + y * blending.y + z * blending.z;
 }
 
-float3 GetTexByHeightPlanar(float height, float3 uvw, float3 N, float index1, float index2)
+float4 GetTexByHeightPlanar(float height, float3 uvw, float3 N, float index1, float index2)
 {
 	float bounds = 1 * 0.005f;
 	float transition = 1 * 0.6f;
 	float blendStart = transition - bounds;
 	float blendEnd = transition + bounds;
-	float3 c;
+	float4 c;
 
 	if (height < blendStart) {
 		c = SampleDetailTriplanar(uvw, N, index1);
@@ -54,12 +65,50 @@ float3 GetTexByHeightPlanar(float height, float3 uvw, float3 N, float index1, fl
 	return c;
 }
 
+float4 GetTexByHeightTriplanar(float height, float3 uvw, float3 N, float index1, float index2) {
+	float bounds = 1 * 0.005f;
+	float transition = 1 * 0.6f;
+	float blendStart = transition - bounds;
+	float blendEnd = transition + bounds;
+	float4 c;
+
+	if (height < blendStart) {
+		c = SampleDetailTriplanar(uvw, N, index1);
+	}
+	else if (height < blendEnd) {
+		float4 c1 = SampleDetailTriplanar(uvw, N, index1);
+		float4 c2 = SampleDetailTriplanar(uvw, N, index2);
+		float blend = (height - blendStart) * (1.0f / (blendEnd - blendStart));
+
+		c = Blend(c1, 1 - blend, c2, blend);
+	}
+	else {
+		c = SampleDetailTriplanar(uvw, N, index2);
+	}
+
+	return c;
+}
+
 float3 GetTexBySlope(float slope, float height, float3 N, float3 uvw, float startingIndex)
 {
-	float3 c;
-	
-	c = SampleDetailTriplanar(uvw, N, 3 + startingIndex);
-	
+	float4 c;
+	float blend;
+	if (slope < 0.6f) {
+		blend = slope / 0.6f;
+		float4 c1 = GetTexByHeightPlanar(height, uvw, 0 + startingIndex, 3 + startingIndex, 1 + startingIndex);
+		float4 c2 = GetTexByHeightTriplanar(height, uvw, N, 2 + startingIndex, 3 + startingIndex);
+		c = Blend(c1, 1 - blend, c2, blend);
+	}
+	else if (slope < 0.65f) {
+		blend = (slope - 0.6f) * (1.0f / (0.65f - 0.6f));
+		float4 c1 = GetTexByHeightTriplanar(height, uvw, N, 2 + startingIndex, 3 + startingIndex);
+		float4 c2 = SampleDetailTriplanar(uvw, N, 3 + startingIndex);
+		c = Blend(c1, 1 - blend, c2, blend);
+	}
+	else {
+		c = SampleDetailTriplanar(uvw, N, 3 + startingIndex);
+	}
+
 	return c.rgb;
 }
 
