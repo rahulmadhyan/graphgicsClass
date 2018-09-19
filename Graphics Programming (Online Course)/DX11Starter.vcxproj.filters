@@ -97,10 +97,10 @@
     <FxCompile Include="VertexShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Debug\terrain.vs">
+    <FxCompile Include="Debug\TerrainVertexShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="Debug\terrain.ps">
+    <FxCompile Include="Debug\TerrainPixelShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

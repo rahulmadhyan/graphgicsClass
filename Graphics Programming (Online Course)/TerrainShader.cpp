@@ -19,7 +19,7 @@ TerrainShader::~TerrainShader()
 void TerrainShader::Initialize(ID3D11Device* device)
 {
 	// Initialize the vertex and pixel shaders.
-	InitializeShader(device, L"Debug/terrain.vs", L"Debug/terrain.ps");
+	InitializeShader(device, L"Debug/TerrainVertexShader.hlsl", L"Debug/TerrainPixelShader.hlsl");
 }
 
 void TerrainShader::Shutdown()
