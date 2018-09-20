@@ -200,7 +200,7 @@ void Game::CreateBasicGeometry()
 
 	//gameTerrain = new Terrain("Debug/HeightMap/demo.png", device);
 	gameTerrain = new Terrain(256, 256, 3.0, 0.01, 3.0, 1.5, 4, 2018);
-	gameTerrain->Initialize(device, L"Debug/Textures/grass.dds", L"Debug/Textures/slope.dds", L"Debug/Textures/rock.dds");
+	gameTerrain->Initialize(device, L"Debug/Textures/grass1.jpg", L"Debug/Textures/dirt1.jpg", L"Debug/Textures/rock1.jpg");
 
 	/*entity1 = new GameEntity(mesh1, material1);
 	entities.push_back(entity1);
@@ -216,7 +216,7 @@ void Game::CreateBasicGeometry()
 	terrainEntity = new GameEntity(gameTerrain->GetMesh(), material1);
 	//entities.push_back(terrainEntity);
 
-	terrainEntity->SetTranslation(0.0f, 0.0f, 10.0f);
+	terrainEntity->SetTranslation(-10.0f, 0.0f, 10.0f);
 	terrainEntity->SetRotation(0.0f, 0.0f, 0.0f);
 	terrainEntity->SetScale(0.1, 0.1f, 0.1f);
 	terrainEntity->SetWorldMatrix();
@@ -254,8 +254,7 @@ void Game::Update(float deltaTime, float totalTime)
 	mainCamera.Update(deltaTime, totalTime);
 
 	float sinTime = (sin(totalTime * 2) + 2.0f) / 10.0f;
-
-	/*entity1->SetTranslation(-2.5f, 1.0f, 0);
+  /*entity1->SetTranslation(-2.5f, 1.0f, 0);
 	entity1->SetRotation(0, 0, totalTime);
 	entity1->SetWorldMatrix();
 
