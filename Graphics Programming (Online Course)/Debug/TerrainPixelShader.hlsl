@@ -45,10 +45,10 @@ float4 main(PixelInputType input) : SV_TARGET
 	// force weights to sum to 1.0
 	float b = blending.x + blending.y + blending.z;
 	blending /= float3(b, b, b);
-
-	float4 x = grassTexture.Sample(SampleType,  input.normal.yz).xyzw;
-	float4 y = slopeTexture.Sample(SampleType, input.normal.xz).xyzw;
-	float4 z = rockTexture.Sample(SampleType, input.normal.xy).xyzw;
+	return float4(input.normal, 1);
+	float4 x = grassTexture.Sample(SampleType,  input.tex).xyzw;
+	float4 y = slopeTexture.Sample(SampleType, input.tex).xyzw;
+	float4 z = rockTexture.Sample(SampleType, input.tex).xyzw;
 
 	float4 tColor = x * blending.x + y * blending.y + z * blending.z;
 	textureColor = tColor;

@@ -440,6 +440,62 @@ void Terrain::GenerateRandomHeightMap(int imageWidth, int imageHeight, double pe
 
 void Terrain::CalulateNormals()
 {
+	int index, index1, index2, index3, index4;
+	Vertex* vertices;
+
+	// Calculate the number of vertices in the terrain mesh.
+	m_vertexCount = (hmInfo.terrainHeight - 1) * (hmInfo.terrainWidth - 1) * 6;
+
+	// Create the vertex array.
+	vertices = new Vertex[m_vertexCount];
+
+	// Initialize the index to the vertex buffer.
+	index = 0;
+
+	// Load the vertex and index array with the terrain data.
+	for (int j = 0; j < (hmInfo.terrainHeight - 1); j++)
+	{
+		for (int i = 0; i < (hmInfo.terrainWidth - 1); i++)
+		{
+			index1 = (hmInfo.terrainHeight * j) + i;          // Bottom left.
+			index2 = (hmInfo.terrainHeight * j) + (i + 1);      // Bottom right.
+			index3 = (hmInfo.terrainHeight * (j + 1)) + i;      // Upper left.
+			index4 = (hmInfo.terrainHeight * (j + 1)) + (i + 1);  // Upper right.
+
+			vertices[index].Position = hmInfo.heightMap[index3];
+			index++;
+
+			vertices[index].Position = hmInfo.heightMap[index4];
+			index++;
+
+			vertices[index].Position = hmInfo.heightMap[index1];
+			index++;
+
+			vertices[index].Position = hmInfo.heightMap[index1];
+			index++;
+
+			vertices[index].Position = hmInfo.heightMap[index4];
+			index++;
+
+			vertices[index].Position = hmInfo.heightMap[index2];
+			index++;
+		}
+	}
+
+	for (int i = 0; i < m_vertexCount; i++)
+	{
+		int width = 0;
+		int height = 0;
+
+		XMVECTOR aPosition = XMLoadFloat3(&vertices[height * hmInfo.terrainHeight + width].Position);
+		XMVECTOR bPosition = XMLoadFloat3(&vertices[height * hmInfo.terrainHeight + width + 1].Position);
+		XMVECTOR cPosition = XMLoadFloat3(&vertices[(height + 1) * hmInfo.terrainHeight + width].Position);
+		XMVECTOR dPosition = XMLoadFloat3(&vertices[(height + 1) * hmInfo.terrainHeight + width].Position);
+
+
+
+	}
+
 	for (int i = 0; i < hmInfo.terrainHeight; i++) {
 		for (int j = 0; j < hmInfo.terrainWidth; j++) {
 
