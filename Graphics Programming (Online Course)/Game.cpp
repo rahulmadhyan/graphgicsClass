@@ -91,13 +91,13 @@ void Game::Init()
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//Initialize Light
-	dLight.AmbientColor = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
+	dLight.AmbientColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	dLight.DiffuseColor = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	dLight.Direction = XMFLOAT3(-1.0f, 1.0f, -1.0f);
+	dLight.Direction = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
-	dLight1.AmbientColor = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
+	dLight1.AmbientColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	dLight1.DiffuseColor = XMFLOAT4(1.0f, 1.0f,	1.0f, 1.0f);
-	dLight1.Direction = XMFLOAT3(1.0f, -1.0f, -1.0f);
+	dLight1.Direction = XMFLOAT3(1.0f, -1.0f, 1.0f);
 }
 
 // --------------------------------------------------------
@@ -142,40 +142,6 @@ void Game::CreateBasicGeometry()
 	// Set up the vertices of the triangle we would like to draw
 	// - We're going to copy this array, exactly as it exists in memory
 	//    over to a DirectX-controlled data structure (the vertex buffer)
-	Vertex vertices1[] = 
-	{
-		{ XMFLOAT3(+0.5f, +0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(+0.5f, -0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(-0.5f, -0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(-0.5f, +0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-	};
-
-	// Set up the indices, which tell us which vertices to use and in which order
-	// - This is somewhat redundant for just 3 vertices (it's a simple example)
-	// - Indices are technically not required if the vertices are in the buffer 
-	//    in the correct order and each one will be used exactly once
-	// - But just to see how it's done...
-	UINT indices1[] = { 0, 1, 2, 0, 2, 3 };
-	
-	Vertex vertices2[] =
-	{
-		{ XMFLOAT3(+1.5f, +1.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(+3.5f, -1.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(+1.5f, -1.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-	};
-
-	UINT indices2[] = { 0, 1, 2 };
-
-	Vertex vertices3[] =
-	{
-		{ XMFLOAT3(-2.0f, +1.0f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(-1.0f, -1.0f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(-2.0f, -1.0f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(-1.0f, +1.0f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(-1.5f, +2.0f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-	};
-
-	UINT indices3[] = { 0, 3, 1, 0, 1, 2, 0, 4, 3 };
 
 	HRESULT ok = CreateWICTextureFromFile(device, context, L"Debug/Textures/Grass.jpg", 0, &srv1);
 	HRESULT ok1 = CreateWICTextureFromFile(device, context, L"Debug/OBJ\ Files/2.jpg", 0, &srv2);

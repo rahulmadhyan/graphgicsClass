@@ -16,7 +16,7 @@ cbuffer LightBuffer
 struct PixelInputType
 {
 	float4 position : SV_POSITION;
-	float2 tex : TEXCOORD0;
+	float2 tex : TEXCOORD;
 	float3 normal : NORMAL;
 };
 
@@ -46,9 +46,9 @@ float4 main(PixelInputType input) : SV_TARGET
 	float b = blending.x + blending.y + blending.z;
 	blending /= float3(b, b, b);
 
-	float4 x = grassTexture.Sample(SampleType,  input.normal.yz).xyzw;
-	float4 y = slopeTexture.Sample(SampleType, input.normal.xz).xyzw;
-	float4 z = rockTexture.Sample(SampleType, input.normal.xy).xyzw;
+	float4 x = grassTexture.Sample(SampleType,  input.tex).xyzw;
+	float4 y = slopeTexture.Sample(SampleType, input.tex).xyzw;
+	float4 z = rockTexture.Sample(SampleType, input.tex).xyzw;
 
 	float4 tColor = x * blending.x + y * blending.y + z * blending.z;
 	textureColor = tColor;
