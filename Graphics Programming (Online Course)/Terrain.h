@@ -11,7 +11,7 @@
 
 using namespace DirectX;
 
-const int TEXTURE_REPEAT = 1;
+const int TEXTURE_REPEAT = 32;
 
 struct HeightMapInfo
 {
