@@ -35,15 +35,14 @@ private:
 		float padding;
 	};
 
-	void InitializeShader(ID3D11Device*, WCHAR*, WCHAR*);
+	void InitializeShader(ID3D11Device* device, WCHAR* vsFilename, WCHAR* psFilename);
 	void ShutdownShader();
-	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
-
+	
 	void SetShaderParameters(ID3D11DeviceContext* deviceContext, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix,
 		XMFLOAT4X4 projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection,
 		ID3D11ShaderResourceView* grassTexture, ID3D11ShaderResourceView* slopeTexture,
 		ID3D11ShaderResourceView* rockTexture);
-	void RenderShader(ID3D11DeviceContext*, int);
+	void RenderShader(ID3D11DeviceContext* context, int indexCount);
 
 	ID3D11VertexShader* m_vertexShader;
 	ID3D11PixelShader* m_pixelShader;

@@ -22,24 +22,10 @@ struct PixelInputType
 
 float4 main(PixelInputType input) : SV_TARGET
 {
-	float4 grassColor;
-	float4 slopeColor;
-	float4 rockColor;
-	float slope;
-	float blendAmount;
 	float4 textureColor;
 	float3 lightDir;
 	float lightIntensity;
 	float4 color;
-
-	// Sample the grass color from the texture using the sampler at this texture coordinate location.
-	grassColor = grassTexture.Sample(SampleType, input.tex);
-
-	// Sample the slope color from the texture using the sampler at this texture coordinate location.
-	slopeColor = slopeTexture.Sample(SampleType, input.tex);
-
-	// Sample the rock color from the texture using the sampler at this texture coordinate location.
-	rockColor = rockTexture.Sample(SampleType, input.tex);
 
 	float3 blending = abs(input.normal);
 	// force weights to sum to 1.0
@@ -50,8 +36,7 @@ float4 main(PixelInputType input) : SV_TARGET
 	float4 y = rockTexture.Sample(SampleType, input.tex).xyzw;
 	float4 z = grassTexture.Sample(SampleType, input.tex).xyzw;
 
-	float4 tColor = x * blending.x + y * blending.y + z * blending.z;
-	textureColor = tColor;
+	textureColor = x * blending.x + y * blending.y + z * blending.z;
 
 	// Invert the light direction for calculations.
 	lightDir = -lightDirection;

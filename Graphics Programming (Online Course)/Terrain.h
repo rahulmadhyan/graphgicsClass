@@ -17,7 +17,7 @@ struct HeightMapInfo
 {
 	int terrainWidth;
 	int terrainHeight;
-	DirectX::XMFLOAT3 *heightMap; //terrain vertex position
+	DirectX::XMFLOAT3 *heightMap; 
 	DirectX::XMFLOAT3 *normal;
 	DirectX::XMFLOAT2 *uv;
 };
@@ -29,7 +29,6 @@ public:
 	Terrain(int imageWidth, int imageHeight, double persistence, double frequency, double amplitude, double smoothing, int octaves, int randomSeed);
 	~Terrain();
 
-	int GetIndexCount();
 	ID3D11ShaderResourceView* GetGrassTexture();
 	ID3D11ShaderResourceView* GetSlopeTexture();
 	ID3D11ShaderResourceView* GetRockTexture();
@@ -42,6 +41,14 @@ public:
 	
 private:
 
+	HeightMapInfo hmInfo;
+	Mesh* terrainMesh;
+
+	PerlinNoise perlinNoiseGenerator;
+
+	ID3D11Buffer *vertexBuffer, *indexBuffer;
+	ID3D11ShaderResourceView *grassTexture, *slopeTexture, *rockTexture;
+
 	DXGI_FORMAT GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID);
 	WICPixelFormatGUID GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID);
 	int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
@@ -52,24 +59,11 @@ private:
 	void CalulateNormals();
 	
 	void CalculateTextureCoordinates();
-	void LoadTextures(ID3D11Device*, WCHAR*, WCHAR*, WCHAR*);
+	void LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename);
 	void ReleaseTextures();
 
-	void InitializeBuffers(ID3D11Device*);
+	void InitializeBuffers(ID3D11Device* device);
 	void ShutdownBuffers();
-	void RenderBuffers(ID3D11DeviceContext*);
-
-	int numFaces = 0;
-	int numVertices = 0;
-
-	HeightMapInfo hmInfo;
-	Mesh* terrainMesh;
-
-	PerlinNoise perlinNoiseGenerator;
-
-	int m_terrainWidth, m_terrainHeight;
-	int m_vertexCount, m_indexCount;
-	ID3D11Buffer *m_vertexBuffer, *m_indexBuffer;
-	ID3D11ShaderResourceView *m_GrassTexture, *m_SlopeTexture, *m_RockTexture;
+	void RenderBuffers(ID3D11DeviceContext* context);
 };
 

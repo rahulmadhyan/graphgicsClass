@@ -20,12 +20,12 @@ Terrain::Terrain(char *fileName, ID3D11Device* device)
 
 Terrain::Terrain(int imageWidth, int imageHeight, double persistence, double frequency, double amplitude, double smoothing, int octaves, int randomSeed)
 {
-	m_vertexBuffer = 0;
-	m_indexBuffer = 0;
+	vertexBuffer = 0;
+	indexBuffer = 0;
 
-	m_GrassTexture = 0;
-	m_SlopeTexture = 0;
-	m_RockTexture = 0;
+	grassTexture = 0;
+	slopeTexture = 0;
+	rockTexture = 0;
 
 	GenerateRandomHeightMap(imageWidth, imageHeight, persistence, frequency, amplitude, smoothing, octaves, randomSeed);
 
@@ -45,28 +45,21 @@ Terrain::~Terrain()
 
 	delete[] hmInfo.uv;
 	hmInfo.uv = 0;
-
-	//Shutdown();
-}
-
-int Terrain::GetIndexCount()
-{
-	return m_indexCount;
 }
 
 ID3D11ShaderResourceView* Terrain::GetGrassTexture()
 {
-	return m_GrassTexture;
+	return grassTexture;
 }
 
 ID3D11ShaderResourceView* Terrain::GetSlopeTexture()
 {
-	return m_SlopeTexture;
+	return slopeTexture;
 }
 
 ID3D11ShaderResourceView* Terrain::GetRockTexture()
 {
-	return m_RockTexture;
+	return rockTexture;
 }
 
 Mesh* Terrain::GetMesh()
@@ -77,9 +70,6 @@ Mesh* Terrain::GetMesh()
 void Terrain::Initialize(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
 	WCHAR* rockTextureFilename)
 {
-	m_terrainHeight = hmInfo.terrainHeight;
-	m_terrainWidth = hmInfo.terrainWidth;
-
 	// Calculate the texture coordinates.
 	CalculateTextureCoordinates();
 
@@ -357,8 +347,8 @@ void Terrain::GenerateMesh(ID3D11Device* device)
 	int columns = hmInfo.terrainWidth;
 	int rows = hmInfo.terrainHeight;
 
-	numVertices = rows * columns;
-	numFaces = (rows - 1) * (columns - 1) * 2;
+	int numVertices = rows * columns;
+	int numFaces = (rows - 1) * (columns - 1) * 2;
 
 	std::vector<Vertex> vertices(numVertices);
 
@@ -470,10 +460,10 @@ void Terrain::CalculateTextureCoordinates()
 	float incrementValue, tuCoordinate, tvCoordinate;
 
 	// Calculate how much to increment the texture coordinates by.
-	incrementValue = (float)TEXTURE_REPEAT / (float)m_terrainWidth;
+	incrementValue = (float)TEXTURE_REPEAT / (float)hmInfo.terrainWidth;
 
 	// Calculate how many times to repeat the texture.
-	incrementCount = m_terrainWidth / TEXTURE_REPEAT;
+	incrementCount = hmInfo.terrainWidth / TEXTURE_REPEAT;
 
 	// Initialize the tu and tv coordinate values.
 	tuCoordinate = 0.0f;
@@ -484,13 +474,13 @@ void Terrain::CalculateTextureCoordinates()
 	tvCount = 0;
 	
 	// Loop through the entire height map and calculate the tu and tv texture coordinates for each vertex.
-	for (j = 0; j < m_terrainHeight; j++)
+	for (j = 0; j < hmInfo.terrainHeight; j++)
 	{
-		for (i = 0; i < m_terrainWidth; i++)
+		for (i = 0; i < hmInfo.terrainWidth; i++)
 		{
 			// Store the texture coordinate in the height map.
-			hmInfo.uv[(m_terrainHeight * j) + i].x = tuCoordinate;
-			hmInfo.uv[(m_terrainHeight * j) + i].y = tvCoordinate;
+			hmInfo.uv[(hmInfo.terrainHeight * j) + i].x = tuCoordinate;
+			hmInfo.uv[(hmInfo.terrainHeight * j) + i].y = tvCoordinate;
 
 			// Increment the tu texture coordinate by the increment value and increment the index by one.
 			tuCoordinate += incrementValue;
@@ -519,27 +509,27 @@ void Terrain::CalculateTextureCoordinates()
 
 void Terrain::LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename)
 {
-	CreateWICTextureFromFile(device, grassTextureFilename, 0, &m_GrassTexture);
-	CreateWICTextureFromFile(device, slopeTextureFilename, 0, &m_SlopeTexture);
-	CreateWICTextureFromFile(device, rockTextureFilename, 0, &m_RockTexture);
+	CreateWICTextureFromFile(device, grassTextureFilename, 0, &grassTexture);
+	CreateWICTextureFromFile(device, slopeTextureFilename, 0, &slopeTexture);
+	CreateWICTextureFromFile(device, rockTextureFilename, 0, &rockTexture);
 }
 
 void Terrain::ReleaseTextures()
 {
 	// Release the texture objects.
-	if (m_GrassTexture)
+	if (grassTexture)
 	{
-		m_GrassTexture->Release();
+		grassTexture->Release();
 	}
 
-	if (m_SlopeTexture)
+	if (slopeTexture)
 	{
-		m_SlopeTexture->Release();
+		slopeTexture->Release();
 	}
 
-	if (m_RockTexture)
+	if (rockTexture)
 	{
-		m_RockTexture->Release();
+		rockTexture->Release();
 	}
 }
 
@@ -555,29 +545,29 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 	float tu, tv;
 
 	// Calculate the number of vertices in the terrain mesh.
-	m_vertexCount = (m_terrainWidth - 1) * (m_terrainHeight - 1) * 6;
+	int vertexCount = (hmInfo.terrainWidth - 1) * (hmInfo.terrainHeight - 1) * 6;
 
 	// Set the index count to the same as the vertex count.
-	m_indexCount = m_vertexCount;
+	int indexCount = vertexCount;
 
 	// Create the vertex array.
-	vertices = new Vertex[m_vertexCount];
+	vertices = new Vertex[vertexCount];
 
 	// Create the index array.
-	indices = new UINT[m_indexCount];
+	indices = new UINT[indexCount];
 
 	// Initialize the index to the vertex buffer.
 	index = 0;
 
 	// Load the vertex and index array with the terrain data.
-	for (j = 0; j < (m_terrainHeight - 1); j++)
+	for (j = 0; j < (hmInfo.terrainHeight - 1); j++)
 	{
-		for (i = 0; i < (m_terrainWidth - 1); i++)
+		for (i = 0; i < (hmInfo.terrainWidth - 1); i++)
 		{
-			index1 = (m_terrainHeight * j) + i;          // Bottom left.
-			index2 = (m_terrainHeight * j) + (i + 1);      // Bottom right.
-			index3 = (m_terrainHeight * (j + 1)) + i;      // Upper left.
-			index4 = (m_terrainHeight * (j + 1)) + (i + 1);  // Upper right.
+			index1 = (hmInfo.terrainHeight * j) + i;          // Bottom left.
+			index2 = (hmInfo.terrainHeight * j) + (i + 1);      // Bottom right.
+			index3 = (hmInfo.terrainHeight * (j + 1)) + i;      // Upper left.
+			index4 = (hmInfo.terrainHeight * (j + 1)) + (i + 1);  // Upper right.
 
 			// Upper left.
 			tv = hmInfo.uv[index3].y;
@@ -647,10 +637,10 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 		}
 	}
 
-	terrainMesh = new Mesh(vertices, m_vertexCount, indices, m_indexCount, device);
+	terrainMesh = new Mesh(vertices, vertexCount, indices, indexCount, device);
 
-	m_vertexBuffer = terrainMesh->GetVertextBuffer();
-	m_indexBuffer = terrainMesh->GetIndexBuffer();
+	vertexBuffer = terrainMesh->GetVertextBuffer();
+	indexBuffer = terrainMesh->GetIndexBuffer();
 
 	// Release the arrays now that the buffers have been created and loaded.
 	delete[] vertices;
@@ -663,15 +653,15 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 void Terrain::ShutdownBuffers()
 {
 	// Release the index buffer.
-	if (m_indexBuffer)
+	if (indexBuffer)
 	{
-		m_indexBuffer->Release();
+		indexBuffer->Release();
 	}
 
 	// Release the vertex buffer.
-	if (m_vertexBuffer)
+	if (vertexBuffer)
 	{
-		m_vertexBuffer->Release();
+		vertexBuffer->Release();
 	}
 }
 
@@ -685,10 +675,10 @@ void Terrain::RenderBuffers(ID3D11DeviceContext* deviceContext)
 	offset = 0;
 
 	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	deviceContext->IASetVertexBuffers(0, 1, &m_vertexBuffer, &stride, &offset);
+	deviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 
 	// Set the index buffer to active in the input assembler so it can be rendered.
-	deviceContext->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	deviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

@@ -293,7 +293,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 
 	gameTerrain->Render(context);
-	gameTerrainShader->Render(context, gameTerrain->GetIndexCount(), terrainEntity->GetWorldMatrix(),
+	gameTerrainShader->Render(context, gameTerrain->GetMesh()->GetIndexCount(), terrainEntity->GetWorldMatrix(),
 		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1.AmbientColor, dLight1.DiffuseColor,
 		dLight1.Direction, gameTerrain->GetGrassTexture(), gameTerrain->GetSlopeTexture(), gameTerrain->GetRockTexture());
 

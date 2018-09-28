@@ -45,7 +45,7 @@ void TerrainShader::InitializeShader(ID3D11Device* device, WCHAR* vsFilename, WC
 	HRESULT result;
 	ID3DBlob* vertexShaderBuffer;
 	ID3DBlob* pixelShaderBuffer;
-	D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
+	D3D11_INPUT_ELEMENT_DESC inputLayout[3];
 	unsigned int numElements;
 	D3D11_SAMPLER_DESC samplerDesc;
 	D3D11_BUFFER_DESC matrixBufferDesc;
@@ -72,35 +72,35 @@ void TerrainShader::InitializeShader(ID3D11Device* device, WCHAR* vsFilename, WC
 	result = device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &m_pixelShader);
 
 	// Create the vertex input layout description.
-	polygonLayout[0].SemanticName = "POSITION";
-	polygonLayout[0].SemanticIndex = 0;
-	polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	polygonLayout[0].InputSlot = 0;
-	polygonLayout[0].AlignedByteOffset = 0;
-	polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	polygonLayout[0].InstanceDataStepRate = 0;
+	inputLayout[0].SemanticName = "POSITION";
+	inputLayout[0].SemanticIndex = 0;
+	inputLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	inputLayout[0].InputSlot = 0;
+	inputLayout[0].AlignedByteOffset = 0;
+	inputLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	inputLayout[0].InstanceDataStepRate = 0;
 
-	polygonLayout[1].SemanticName = "NORMAL";
-	polygonLayout[1].SemanticIndex = 0;
-	polygonLayout[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	polygonLayout[1].InputSlot = 0;
-	polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	polygonLayout[1].InstanceDataStepRate = 0;
+	inputLayout[1].SemanticName = "NORMAL";
+	inputLayout[1].SemanticIndex = 0;
+	inputLayout[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	inputLayout[1].InputSlot = 0;
+	inputLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	inputLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	inputLayout[1].InstanceDataStepRate = 0;
 
-	polygonLayout[2].SemanticName = "TEXCOORD";
-	polygonLayout[2].SemanticIndex = 0;
-	polygonLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
-	polygonLayout[2].InputSlot = 0;
-	polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	polygonLayout[2].InstanceDataStepRate = 0;
+	inputLayout[2].SemanticName = "TEXCOORD";
+	inputLayout[2].SemanticIndex = 0;
+	inputLayout[2].Format = DXGI_FORMAT_R32G32_FLOAT;
+	inputLayout[2].InputSlot = 0;
+	inputLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	inputLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	inputLayout[2].InstanceDataStepRate = 0;
 
 	// Get a count of the elements in the layout.
-	numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
+	numElements = sizeof(inputLayout) / sizeof(inputLayout[0]);
 
 	// Create the vertex input layout.
-	result = device->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(),
+	result = device->CreateInputLayout(inputLayout, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(),
 		&m_layout);
 
 	// Release the vertex shader buffer and pixel shader buffer since they are no longer needed.
@@ -212,11 +212,6 @@ void TerrainShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMFL
 	XMMATRIX vMatrix = XMLoadFloat4x4(&viewMatrix);
 	XMMATRIX pMatrix = XMLoadFloat4x4(&projectionMatrix);
 
-	// Transpose the matrices to prepare them for the shader.
-	//wMatrix = XMMatrixTranspose(wMatrix);
-	//vMatrix = XMMatrixTranspose(vMatrix);
-	//pMatrix = XMMatrixTranspose(pMatrix);
-
 	// Lock the constant buffer so it can be written to.
 	result = deviceContext->Map(m_matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 
@@ -264,18 +259,18 @@ void TerrainShader::SetShaderParameters(ID3D11DeviceContext* deviceContext, XMFL
 	deviceContext->PSSetShaderResources(2, 1, &rockTexture);
 }
 
-void TerrainShader::RenderShader(ID3D11DeviceContext* deviceContext, int indexCount)
+void TerrainShader::RenderShader(ID3D11DeviceContext* context, int indexCount)
 {
 	// Set the vertex input layout.
-	deviceContext->IASetInputLayout(m_layout);
+	context->IASetInputLayout(m_layout);
 
 	// Set the vertex and pixel shaders that will be used to render this triangle.
-	deviceContext->VSSetShader(m_vertexShader, NULL, 0);
-	deviceContext->PSSetShader(m_pixelShader, NULL, 0);
+	context->VSSetShader(m_vertexShader, NULL, 0);
+	context->PSSetShader(m_pixelShader, NULL, 0);
 
 	// Set the sampler state in the pixel shader.
-	deviceContext->PSSetSamplers(0, 1, &m_sampleState);
+	context->PSSetSamplers(0, 1, &m_sampleState);
 
 	// Render the triangle.
-	deviceContext->DrawIndexed(indexCount, 0, 0);
+	context->DrawIndexed(indexCount, 0, 0);
 }
