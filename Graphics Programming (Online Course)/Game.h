@@ -9,6 +9,7 @@
 #include "Terrain.h"
 #include "TerrainShader.h"
 #include "WICTextureLoader.h"
+#include "Skybox.h"
 #include <DirectXMath.h>
 
 class Game 
@@ -66,6 +67,9 @@ private:
 	//Terrain
 	Terrain* gameTerrain;
 	TerrainShader* gameTerrainShader;
+
+	//Skybox
+	Skybox* skybox;
 
 	//Collection of entitites
 	std::vector<GameEntity*> entities;

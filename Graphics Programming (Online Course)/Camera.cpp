@@ -61,7 +61,7 @@ void Camera::Update(float deltaTime, float totalTime)
 
 	if (GetAsyncKeyState('W') & 0x8000)
 	{
-		pos = pos + (newDirection * moveRate * deltaTime);
+		pos += (newDirection * moveRate * deltaTime);
 	}
 
 	if (GetAsyncKeyState('S') & 0x8000)

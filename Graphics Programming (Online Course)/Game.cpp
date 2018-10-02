@@ -60,6 +60,8 @@ Game::~Game()
 	
 	delete terrainEntity;
 
+	delete skybox;
+
 	std::vector<GameEntity*>::iterator it;
 	for (it = entities.begin(); it < entities.end(); it++)
 	{
@@ -189,7 +191,10 @@ void Game::CreateBasicGeometry()
 
 	gameTerrainShader = new TerrainShader();
 	gameTerrainShader->Initialize(device);
+
+	skybox = new Skybox("Debug/OBJ\ Files/cube.obj", L"Debug/Textures/SunnyCubeMap.dds", device);
 }
+
 
 void Game::CreateCamera()
 {
@@ -218,28 +223,6 @@ void Game::Update(float deltaTime, float totalTime)
 		Quit();
 
 	mainCamera.Update(deltaTime, totalTime);
-
-	float sinTime = (sin(totalTime * 2) + 2.0f) / 10.0f;
-  /*entity1->SetTranslation(-2.5f, 1.0f, 0);
-	entity1->SetRotation(0, 0, totalTime);
-	entity1->SetWorldMatrix();
-
-	entity2->SetTranslation(2.5f, sinTime, 0);
-	entity2->SetScale(sinTime, sinTime, sinTime);
-	entity2->SetWorldMatrix();
-
-	entity3->SetTranslation((-5.0f * sinTime) - 2.0f, -1.5f, 0);
-	entity3->SetScale(0.2f, 0.2f, 0.2f);
-	entity3->SetWorldMatrix();
-
-	entity4->SetTranslation(1.0f, 0.0f, 0.0f);
-	entity4->SetScale(0.5f, 0.5f, 0.5f);
-	entity4->SetWorldMatrix();
-	
-	entity5->SetTranslation(1.0f, -1.5f, 0.0f);
-	entity5->SetScale(sinTime, sinTime, sinTime);
-	entity5->SetRotation(0.0f, 0.0f, totalTime);
-	entity5->SetWorldMatrix();*/
 }
 
 // --------------------------------------------------------
@@ -296,6 +279,8 @@ void Game::Draw(float deltaTime, float totalTime)
 	gameTerrainShader->Render(context, gameTerrain->GetMesh()->GetIndexCount(), terrainEntity->GetWorldMatrix(),
 		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1.AmbientColor, dLight1.DiffuseColor,
 		dLight1.Direction, gameTerrain->GetGrassTexture(), gameTerrain->GetSlopeTexture(), gameTerrain->GetRockTexture());
+
+	skybox->Render(context, mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
 
 	swapChain->Present(0, 0);
 }
