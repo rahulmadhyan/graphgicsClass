@@ -164,8 +164,8 @@ void Game::CreateBasicGeometry()
 	material1 = new Material(vertexShader, pixelShader, srv1, sampler);
 	material2 = new Material(vertexShader, pixelShader, srv2, sampler);
 
-	//gameTerrain = new Terrain("Debug/HeightMap/demo.png", device);
-	gameTerrain = new Terrain(256, 256, 3.0, 0.01, 3.0, 1.5, 4, 2018);
+	gameTerrain = new Terrain("Debug/HeightMap/demo.png", device);
+	//gameTerrain = new Terrain(256, 256, 3.0, 0.01, 3.0, 1.5, 4, 2018);
 	gameTerrain->Initialize(device, L"Debug/Textures/grass1.jpg", L"Debug/Textures/dirt1.jpg", L"Debug/Textures/rock1.jpg");
 
 	/*entity1 = new GameEntity(mesh1, material1);

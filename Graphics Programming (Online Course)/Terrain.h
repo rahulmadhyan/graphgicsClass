@@ -58,8 +58,12 @@ private:
 
 	PerlinNoise perlinNoiseGenerator;
 
-	ID3D11Buffer *vertexBuffer, *indexBuffer;
-	ID3D11ShaderResourceView *grassTexture, *slopeTexture, *rockTexture;
+	ID3D11Buffer* vertexBuffer;
+	ID3D11Buffer* indexBuffer;
+
+	ID3D11ShaderResourceView* grassTexture;
+	ID3D11ShaderResourceView* slopeTexture;
+	ID3D11ShaderResourceView* rockTexture;
 
 	ID3D11VertexShader* vertexShader;
 	ID3D11PixelShader* pixelShader;
@@ -72,15 +76,15 @@ private:
 	WICPixelFormatGUID GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID);
 	int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
 	int LoadImageDataFromFile(BYTE** imageData, LPCWSTR filename, int &bytesPerRow);
-	void GenerateMesh(ID3D11Device* device);
 
 	void GenerateRandomHeightMap(int imageWidth, int imageHeight, double persistence, double frequency, double amplitude, double smoothing, int octaves, int randomSeed);
-	void CalulateNormals();
 	
+	void CalulateNormals();
 	void CalculateTextureCoordinates();
 	void LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename);
 	void InitializeBuffers(ID3D11Device* device);
-
+	
+	void InitializeShaders(ID3D11Device* device);
 	void SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix,
 		XMFLOAT4X4 projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection);
 };
