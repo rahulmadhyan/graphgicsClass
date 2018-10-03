@@ -78,9 +78,7 @@ private:
 	//Lights
 	DirectionalLight dLight;
 	DirectionalLight dLight1;
-
-	ID3D11ShaderResourceView* srv1;
-	ID3D11ShaderResourceView* srv2;
+	
 	ID3D11SamplerState* sampler;
 };
 

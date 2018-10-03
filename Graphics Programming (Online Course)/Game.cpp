@@ -47,28 +47,18 @@ Game::~Game()
 	delete vertexShader;
 	delete pixelShader;
 
-	delete mesh1;
-	delete mesh2;
-	delete mesh3;
-
-	delete material1;
-	delete material2;
-
 	delete gameTerrain;
-	
 	delete terrainEntity;
 
 	delete skybox;
 
-	std::vector<GameEntity*>::iterator it;
+	/*std::vector<GameEntity*>::iterator it;
 	for (it = entities.begin(); it < entities.end(); it++)
 	{
 		GameEntity* currentEntity = *it;
 		delete currentEntity;
-	}
+	}*/
 
-	srv1->Release();
-	srv2->Release();
 	sampler->Release();
 }
 
@@ -133,19 +123,6 @@ void Game::LoadShaders()
 // --------------------------------------------------------
 void Game::CreateBasicGeometry()
 {
-	// Create some temporary variables to represent colors
-	// - Not necessary, just makes things more readable
-	XMFLOAT4 red	= XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 green	= XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 blue	= XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-
-	// Set up the vertices of the triangle we would like to draw
-	// - We're going to copy this array, exactly as it exists in memory
-	//    over to a DirectX-controlled data structure (the vertex buffer)
-
-	HRESULT ok = CreateWICTextureFromFile(device, context, L"Debug/Textures/Grass.jpg", 0, &srv1);
-	HRESULT ok1 = CreateWICTextureFromFile(device, context, L"Debug/OBJ\ Files/2.jpg", 0, &srv2);
-
 	D3D11_SAMPLER_DESC sampDesc = {};
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -157,30 +134,11 @@ void Game::CreateBasicGeometry()
 	// Now, create the sampler from the description
 	HRESULT ok2 = device->CreateSamplerState(&sampDesc, &sampler);
 
-	mesh1 = new Mesh("Debug/OBJ\ Files/helix.obj", device);
-	mesh2 = new Mesh("Debug/OBJ\ Files/cone.obj", device);
- 	mesh3 = new Mesh("Debug/OBJ\ Files/cube.obj", device);
-	
-	material1 = new Material(vertexShader, pixelShader, srv1, sampler);
-	material2 = new Material(vertexShader, pixelShader, srv2, sampler);
-
 	gameTerrain = new Terrain("Debug/HeightMap/demo.png", device);
 	//gameTerrain = new Terrain(256, 256, 3.0, 0.01, 3.0, 1.5, 4, 2018);
 	gameTerrain->Initialize(device, L"Debug/Textures/grass1.jpg", L"Debug/Textures/dirt1.jpg", L"Debug/Textures/rock1.jpg");
 
-	/*entity1 = new GameEntity(mesh1, material1);
-	entities.push_back(entity1);
-	entity2 = new GameEntity(mesh1, material1);
-	entities.push_back(entity2);
-	entity3 = new GameEntity(mesh2, material2);
-	entities.push_back(entity3);
-	entity4 = new GameEntity(mesh3, material2);
-	entities.push_back(entity4);
-	entity5 = new GameEntity(mesh2, material1);
-	entities.push_back(entity5);*/
-	
-	terrainEntity = new GameEntity(gameTerrain->GetMesh(), material1);
-	//entities.push_back(terrainEntity);
+	terrainEntity = new GameEntity(gameTerrain->GetMesh(), NULL);
 
 	terrainEntity->SetTranslation(-10.0f, 0.0f, 10.0f);
 	terrainEntity->SetRotation(0.0f, 0.0f, 0.0f);
@@ -244,31 +202,31 @@ void Game::Draw(float deltaTime, float totalTime)
 	//    and then copying that entire buffer to the GPU.  
 	//  - The "SimpleShader" class handles all of that for you.
 
-	std::vector<GameEntity*>::iterator it;
-	for (it = entities.begin(); it < entities.end(); it++)
-	{
-		GameEntity *currentEntity = *it;
-		
-		currentEntity->PrepareMaterial(mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight, dLight1);
+	//std::vector<GameEntity*>::iterator it;
+	//for (it = entities.begin(); it < entities.end(); it++)
+	//{
+	//	GameEntity *currentEntity = *it;
+	//	
+	//	currentEntity->PrepareMaterial(mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight, dLight1);
 
-		UINT stride = sizeof(Vertex);
-		UINT offset = 0;
+	//	UINT stride = sizeof(Vertex);
+	//	UINT offset = 0;
 
-		Mesh* currentEntityMesh = currentEntity->GetMesh();
-		ID3D11Buffer* mesh1VertexBuffer = currentEntityMesh->GetVertextBuffer();
-		context->IASetVertexBuffers(0, 1, &mesh1VertexBuffer, &stride, &offset);
-		context->IASetIndexBuffer(currentEntityMesh->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
+	//	Mesh* currentEntityMesh = currentEntity->GetMesh();
+	//	ID3D11Buffer* mesh1VertexBuffer = currentEntityMesh->GetVertextBuffer();
+	//	context->IASetVertexBuffers(0, 1, &mesh1VertexBuffer, &stride, &offset);
+	//	context->IASetIndexBuffer(currentEntityMesh->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
 
-		// Finally do the actual drawing
-		//  - Do this ONCE PER OBJECT you intend to draw
-		//  - This will use all of the currently set DirectX "stuff" (shaders, buffers, etc)
-		//  - DrawIndexed() uses the currently set INDEX BUFFER to look up corresponding
-		//     vertices in the currently set VERTEX BUFFER
-		context->DrawIndexed(
-			currentEntityMesh->GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
-			0,     // Offset to the first index we want to use
-			0);    // Offset to add to each index when looking up vertices
-	}
+	//	// Finally do the actual drawing
+	//	//  - Do this ONCE PER OBJECT you intend to draw
+	//	//  - This will use all of the currently set DirectX "stuff" (shaders, buffers, etc)
+	//	//  - DrawIndexed() uses the currently set INDEX BUFFER to look up corresponding
+	//	//     vertices in the currently set VERTEX BUFFER
+	//	context->DrawIndexed(
+	//		currentEntityMesh->GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
+	//		0,     // Offset to the first index we want to use
+	//		0);    // Offset to add to each index when looking up vertices
+	//}
 
 	gameTerrain->Render(context, gameTerrain->GetMesh()->GetIndexCount(), terrainEntity->GetWorldMatrix(),
 		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1);
