@@ -7,7 +7,6 @@
 #include "Camera.h"
 #include "Lights.h"
 #include "Terrain.h"
-#include "TerrainShader.h"
 #include "WICTextureLoader.h"
 #include "Skybox.h"
 #include <DirectXMath.h>
@@ -66,8 +65,7 @@ private:
 
 	//Terrain
 	Terrain* gameTerrain;
-	TerrainShader* gameTerrainShader;
-
+	
 	//Skybox
 	Skybox* skybox;
 

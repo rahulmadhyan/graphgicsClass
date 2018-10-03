@@ -54,9 +54,7 @@ Game::~Game()
 	delete material1;
 	delete material2;
 
-	gameTerrain->Shutdown();
 	delete gameTerrain;
-	delete gameTerrainShader;
 	
 	delete terrainEntity;
 
@@ -189,9 +187,6 @@ void Game::CreateBasicGeometry()
 	terrainEntity->SetScale(0.1, 0.1f, 0.1f);
 	terrainEntity->SetWorldMatrix();
 
-	gameTerrainShader = new TerrainShader();
-	gameTerrainShader->Initialize(device);
-
 	skybox = new Skybox("Debug/OBJ\ Files/cube.obj", L"Debug/Textures/SunnyCubeMap.dds", device);
 }
 
@@ -275,11 +270,9 @@ void Game::Draw(float deltaTime, float totalTime)
 			0);    // Offset to add to each index when looking up vertices
 	}
 
-	gameTerrain->Render(context);
-	gameTerrainShader->Render(context, gameTerrain->GetMesh()->GetIndexCount(), terrainEntity->GetWorldMatrix(),
-		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1.AmbientColor, dLight1.DiffuseColor,
-		dLight1.Direction, gameTerrain->GetGrassTexture(), gameTerrain->GetSlopeTexture(), gameTerrain->GetRockTexture());
-
+	gameTerrain->Render(context, gameTerrain->GetMesh()->GetIndexCount(), terrainEntity->GetWorldMatrix(),
+		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1);
+	
 	skybox->Render(context, mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
 
 	swapChain->Present(0, 0);

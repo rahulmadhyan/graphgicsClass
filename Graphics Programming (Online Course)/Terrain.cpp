@@ -27,6 +27,13 @@ Terrain::Terrain(int imageWidth, int imageHeight, double persistence, double fre
 	slopeTexture = 0;
 	rockTexture = 0;
 
+	vertexShader = 0;
+	pixelShader = 0;
+	inputLayout = 0;
+	sampler = 0;
+	matrixBuffer = 0;
+	lightBuffer = 0;
+
 	GenerateRandomHeightMap(imageWidth, imageHeight, persistence, frequency, amplitude, smoothing, octaves, randomSeed);
 
 	CalulateNormals();
@@ -45,21 +52,63 @@ Terrain::~Terrain()
 
 	delete[] hmInfo.uv;
 	hmInfo.uv = 0;
-}
 
-ID3D11ShaderResourceView* Terrain::GetGrassTexture()
-{
-	return grassTexture;
-}
+	// Release the light constant buffer.
+	if (lightBuffer)
+	{
+		lightBuffer->Release();
+		lightBuffer = 0;
+	}
 
-ID3D11ShaderResourceView* Terrain::GetSlopeTexture()
-{
-	return slopeTexture;
-}
+	// Release the matrix constant buffer.
+	if (matrixBuffer)
+	{
+		matrixBuffer->Release();
+		matrixBuffer = 0;
+	}
 
-ID3D11ShaderResourceView* Terrain::GetRockTexture()
-{
-	return rockTexture;
+	// Release the sampler state.
+	if (sampler)
+	{
+		sampler->Release();
+		sampler = 0;
+	}
+
+	// Release the layout.
+	if (inputLayout)
+	{
+		inputLayout->Release();
+		inputLayout = 0;
+	}
+
+	// Release the pixel shader.
+	if (pixelShader)
+	{
+		pixelShader->Release();
+		pixelShader = 0;
+	}
+
+	// Release the vertex shader.
+	if (vertexShader)
+	{
+		vertexShader->Release();
+		vertexShader = 0;
+	}
+
+	if (grassTexture)
+	{
+		grassTexture->Release();
+	}
+
+	if (slopeTexture)
+	{
+		slopeTexture->Release();
+	}
+
+	if (rockTexture)
+	{
+		rockTexture->Release();
+	}
 }
 
 Mesh* Terrain::GetMesh()
@@ -76,18 +125,209 @@ void Terrain::Initialize(ID3D11Device* device, WCHAR* grassTextureFilename, WCHA
 	LoadTextures(device, grassTextureFilename, slopeTextureFilename, rockTextureFilename);
 
 	InitializeBuffers(device);
+
+	HRESULT result;
+	ID3DBlob* vertexShaderBuffer;
+	ID3DBlob* pixelShaderBuffer;
+	D3D11_INPUT_ELEMENT_DESC inputLayoutDesc[3];
+	unsigned int numElements;
+	D3D11_SAMPLER_DESC samplerDesc;
+	D3D11_BUFFER_DESC matrixBufferDesc;
+	D3D11_BUFFER_DESC lightBufferDesc;
+
+	// Initialize the pointers this function will use to null.
+	//errorMessage = 0;
+	vertexShaderBuffer = 0;
+	pixelShaderBuffer = 0;
+
+	// Compile the vertex shader code.
+	result = D3DCompileFromFile(L"Debug/TerrainVertexShader.hlsl", NULL, NULL, "main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
+		&vertexShaderBuffer, 0);
+
+
+	// Compile the pixel shader code.
+	result = D3DCompileFromFile(L"Debug/TerrainPixelShader.hlsl", NULL, NULL, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
+		&pixelShaderBuffer, 0);
+
+	// Create the vertex shader from the buffer.
+	result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &vertexShader);
+
+	// Create the pixel shader from the buffer.
+	result = device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &pixelShader);
+
+	// Create the vertex input layout description.
+	inputLayoutDesc[0].SemanticName = "POSITION";
+	inputLayoutDesc[0].SemanticIndex = 0;
+	inputLayoutDesc[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	inputLayoutDesc[0].InputSlot = 0;
+	inputLayoutDesc[0].AlignedByteOffset = 0;
+	inputLayoutDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	inputLayoutDesc[0].InstanceDataStepRate = 0;
+
+	inputLayoutDesc[1].SemanticName = "TEXCOORD";
+	inputLayoutDesc[1].SemanticIndex = 0;
+	inputLayoutDesc[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+	inputLayoutDesc[1].InputSlot = 0;
+	inputLayoutDesc[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	inputLayoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	inputLayoutDesc[1].InstanceDataStepRate = 0;
+
+	inputLayoutDesc[2].SemanticName = "NORMAL";
+	inputLayoutDesc[2].SemanticIndex = 0;
+	inputLayoutDesc[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	inputLayoutDesc[2].InputSlot = 0;
+	inputLayoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	inputLayoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	inputLayoutDesc[2].InstanceDataStepRate = 0;
+
+	// Get a count of the elements in the layout.
+	numElements = sizeof(inputLayoutDesc) / sizeof(inputLayoutDesc[0]);
+
+	// Create the vertex input layout.
+	result = device->CreateInputLayout(inputLayoutDesc, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(),
+		&inputLayout);
+
+	// Release the vertex shader buffer and pixel shader buffer since they are no longer needed.
+	vertexShaderBuffer->Release();
+	vertexShaderBuffer = 0;
+
+	pixelShaderBuffer->Release();
+	pixelShaderBuffer = 0;
+
+	// Create a texture sampler state description.
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	samplerDesc.BorderColor[0] = 0;
+	samplerDesc.BorderColor[1] = 0;
+	samplerDesc.BorderColor[2] = 0;
+	samplerDesc.BorderColor[3] = 0;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	// Create the texture sampler state.
+	result = device->CreateSamplerState(&samplerDesc, &sampler);
+
+	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
+	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
+	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	matrixBufferDesc.MiscFlags = 0;
+	matrixBufferDesc.StructureByteStride = 0;
+
+	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
+	result = device->CreateBuffer(&matrixBufferDesc, NULL, &matrixBuffer);
+
+	// Setup the description of the light dynamic constant buffer that is in the pixel shader.
+	// Note that ByteWidth always needs to be a multiple of 16 if using D3D11_BIND_CONSTANT_BUFFER or CreateBuffer will fail.
+	lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	lightBufferDesc.ByteWidth = sizeof(LightBufferType);
+	lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	lightBufferDesc.MiscFlags = 0;
+	lightBufferDesc.StructureByteStride = 0;
+
+	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
+	result = device->CreateBuffer(&lightBufferDesc, NULL, &lightBuffer);
 }
 
-void Terrain::Render(ID3D11DeviceContext* deviceContext)
+void Terrain::Render(ID3D11DeviceContext* context, int indexCount, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight)
 {
-	// Put the vertex and index buffers on the graphics pipeline to prepare them for drawing.
-	RenderBuffers(deviceContext);
+	SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix, dLight.AmbientColor, dLight.DiffuseColor, dLight.Direction);
+
+	unsigned int stride;
+	unsigned int offset;
+
+	// Set vertex buffer stride and offset.
+	stride = sizeof(Vertex);
+	offset = 0;
+
+	// Set the vertex buffer to active in the input assembler so it can be rendered.
+	context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+
+	// Set the index buffer to active in the input assembler so it can be rendered.
+	context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
+	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Set the vertex input layout.
+	context->IASetInputLayout(inputLayout);
+
+	// Set the vertex and pixel shaders that will be used to render this triangle.
+	context->VSSetShader(vertexShader, NULL, 0);
+	context->PSSetShader(pixelShader, NULL, 0);
+
+	// Set the sampler state in the pixel shader.
+	context->PSSetSamplers(0, 1, &sampler);
+
+	// Render the triangle.
+	context->DrawIndexed(indexCount, 0, 0);
 }
 
-void Terrain::Shutdown()
+void Terrain::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix,
+	XMFLOAT4X4 projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection)
 {
-	// Release the textures.
-	ReleaseTextures();
+	HRESULT result;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	unsigned int bufferNumber;
+	MatrixBufferType* dataPtr;
+	LightBufferType* dataPtr2;
+
+	XMMATRIX wMatrix = XMLoadFloat4x4(&worldMatrix);
+	XMMATRIX vMatrix = XMLoadFloat4x4(&viewMatrix);
+	XMMATRIX pMatrix = XMLoadFloat4x4(&projectionMatrix);
+
+	// Lock the constant buffer so it can be written to.
+	result = context->Map(matrixBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+
+	// Get a pointer to the data in the constant buffer.
+	dataPtr = (MatrixBufferType*)mappedResource.pData;
+
+	// Copy the matrices into the constant buffer.
+	XMStoreFloat4x4(&dataPtr->world, wMatrix);
+	XMStoreFloat4x4(&dataPtr->view, vMatrix);
+	XMStoreFloat4x4(&dataPtr->projection, pMatrix);
+
+	// Unlock the constant buffer.
+	context->Unmap(matrixBuffer, 0);
+
+	// Set the position of the constant buffer in the vertex shader.
+	bufferNumber = 0;
+
+	// Now set the constant buffer in the vertex shader with the updated values.
+	context->VSSetConstantBuffers(bufferNumber, 1, &matrixBuffer);
+
+	// Lock the light constant buffer so it can be written to.
+	result = context->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+
+	// Get a pointer to the data in the constant buffer.
+	dataPtr2 = (LightBufferType*)mappedResource.pData;
+
+	// Copy the lighting variables into the constant buffer.
+	dataPtr2->ambientColor = ambientColor;
+	dataPtr2->diffuseColor = diffuseColor;
+	dataPtr2->lightDirection = lightDirection;
+	dataPtr2->padding = 0.0f;
+
+	// Unlock the constant buffer.
+	context->Unmap(lightBuffer, 0);
+
+	// Set the position of the light constant buffer in the pixel shader.
+	bufferNumber = 0;
+
+	// Finally set the light constant buffer in the pixel shader with the updated values.
+	context->PSSetConstantBuffers(bufferNumber, 1, &lightBuffer);
+
+	// Set shader texture resources in the pixel shader.
+	context->PSSetShaderResources(0, 1, &grassTexture);
+	context->PSSetShaderResources(1, 1, &slopeTexture);
+	context->PSSetShaderResources(2, 1, &rockTexture);
 }
 
 // get the dxgi format equivilent of a wic format
@@ -514,25 +754,6 @@ void Terrain::LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WC
 	CreateWICTextureFromFile(device, rockTextureFilename, 0, &rockTexture);
 }
 
-void Terrain::ReleaseTextures()
-{
-	// Release the texture objects.
-	if (grassTexture)
-	{
-		grassTexture->Release();
-	}
-
-	if (slopeTexture)
-	{
-		slopeTexture->Release();
-	}
-
-	if (rockTexture)
-	{
-		rockTexture->Release();
-	}
-}
-
 void Terrain::InitializeBuffers(ID3D11Device* device)
 {
 	Vertex* vertices;
@@ -648,38 +869,4 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 
 	delete[] indices;
 	indices = 0;
-}
-
-void Terrain::ShutdownBuffers()
-{
-	// Release the index buffer.
-	if (indexBuffer)
-	{
-		indexBuffer->Release();
-	}
-
-	// Release the vertex buffer.
-	if (vertexBuffer)
-	{
-		vertexBuffer->Release();
-	}
-}
-
-void Terrain::RenderBuffers(ID3D11DeviceContext* deviceContext)
-{
-	unsigned int stride;
-	unsigned int offset;
-
-	// Set vertex buffer stride and offset.
-	stride = sizeof(Vertex);
-	offset = 0;
-
-	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	deviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-
-	// Set the index buffer to active in the input assembler so it can be rendered.
-	deviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
