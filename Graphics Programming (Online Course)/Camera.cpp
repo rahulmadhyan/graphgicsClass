@@ -130,7 +130,7 @@ void Camera::SetProjectionMatrix(unsigned int newWidth, unsigned int newHeight)
 		0.25f * 3.1415926535f,		// Field of View Angle
 		(float)newWidth / newWidth,		// Aspect ratio
 		0.1f,						// Near clip plane distance
-		100.0f);					// Far clip plane distance
+		1000.0f);					// Far clip plane distance
 	XMStoreFloat4x4(&projectionMatrix, XMMatrixTranspose(P)); // Transpose for HLSL!
 }
 
