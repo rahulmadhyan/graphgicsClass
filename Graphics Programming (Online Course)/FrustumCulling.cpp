@@ -27,6 +27,9 @@ void FrustumCulling::ConstructFrustum(XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projecti
 	XMMATRIX vMatrix = XMLoadFloat4x4(&viewMatrix);
 	XMMATRIX pMatrix = XMLoadFloat4x4(&projectionMatrix);
 
+	vMatrix = XMMatrixTranspose(vMatrix);
+	pMatrix = XMMatrixTranspose(pMatrix);
+
 	finalMatrix = XMMatrixMultiply(vMatrix, pMatrix);
 	XMStoreFloat4x4(&fMatrix, finalMatrix);
 
@@ -257,7 +260,6 @@ bool FrustumCulling::CheckRectangle2(float maxWidth, float maxHeight, float maxD
 {
 	int i;
 	float dotProduct;
-
 
 	// Check if any of the 6 planes of the rectangle are inside the view frustum.
 	for (i = 0; i < 6; i++)

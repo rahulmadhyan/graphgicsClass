@@ -9,6 +9,8 @@
 #include "Mesh.h"
 #include "Lights.h"
 #include "PerlinNoise.h"
+#include "TerrainCell.h"
+#include "FrustumCulling.h"
 
 using namespace DirectX;
 
@@ -30,11 +32,12 @@ public:
 	Terrain(int imageWidth, int imageHeight, double persistence, double frequency, double amplitude, double smoothing, int octaves, int randomSeed);
 	~Terrain();
 
+	int GetTerrainCellCount();
 	Mesh* GetMesh();
-
+	
 	void Initialize(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
 		WCHAR* rockTextureFilename);
-	void Render(ID3D11DeviceContext* context, int indexCount, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight);
+	void Render(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum);
 	
 private:
 
@@ -53,9 +56,10 @@ private:
 		float padding;
 	};
 
-	HeightMapInfo hmInfo;
-	Mesh* terrainMesh;
+	int terrainCellCount;
 
+	HeightMapInfo hmInfo;
+	
 	PerlinNoise perlinNoiseGenerator;
 
 	ID3D11Buffer* vertexBuffer;
@@ -72,6 +76,10 @@ private:
 	ID3D11Buffer* matrixBuffer;
 	ID3D11Buffer* lightBuffer;
 
+	Mesh* terrainMesh;
+
+	TerrainCell* terrainCells;
+
 	DXGI_FORMAT GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID);
 	WICPixelFormatGUID GetConvertToWICFormat(WICPixelFormatGUID& wicFormatGUID);
 	int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
@@ -83,7 +91,8 @@ private:
 	void CalculateTextureCoordinates();
 	void LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename);
 	void InitializeBuffers(ID3D11Device* device);
-	
+	void InitializeTerraincCells(ID3D11Device* device, Vertex* terrainVertices);
+
 	void InitializeShaders(ID3D11Device* device);
 	void SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix,
 		XMFLOAT4X4 projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection);

@@ -24,6 +24,9 @@ Terrain::~Terrain()
 	delete terrainMesh;
 	terrainMesh = 0;
 
+	delete[] terrainCells;
+	terrainCells = 0;
+
 	delete[] hmInfo.heightMap;
 	hmInfo.heightMap = 0;
 
@@ -91,6 +94,11 @@ Terrain::~Terrain()
 	}
 }
 
+int Terrain::GetTerrainCellCount()
+{
+	return terrainCellCount;
+}
+
 Mesh* Terrain::GetMesh()
 {
 	return terrainMesh; 
@@ -99,6 +107,8 @@ Mesh* Terrain::GetMesh()
 void Terrain::Initialize(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
 	WCHAR* rockTextureFilename)
 {
+	terrainCellCount = 0;
+
 	vertexBuffer = 0;
 	indexBuffer = 0;
 
@@ -124,38 +134,57 @@ void Terrain::Initialize(ID3D11Device* device, WCHAR* grassTextureFilename, WCHA
 	InitializeShaders(device);
 }
 
-void Terrain::Render(ID3D11DeviceContext* context, int indexCount, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight)
+void Terrain::Render(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum)
 {
 	SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix, dLight.AmbientColor, dLight.DiffuseColor, dLight.Direction);
 
-	unsigned int stride;
-	unsigned int offset;
+	for (int i = 0; i < terrainCellCount; i++)
+	{
+		float maxWidth = terrainCells[i].GetMaxWidth();
+		float maxHeight = terrainCells[i].GetMaxHeight();
+		float maxDepth = terrainCells[i].GetMaxDepth();
 
-	// Set vertex buffer stride and offset.
-	stride = sizeof(Vertex);
-	offset = 0;
+		float minWidth = terrainCells[i].GetMinWidth();
+		float minHeight = terrainCells[i].GetMinHeight();
+		float minDepth = terrainCells[i].GetMinDepth();
 
-	// Set the vertex buffer to active in the input assembler so it can be rendered.
-	context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+		bool render = frustum->CheckRectangle2(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
 
-	// Set the index buffer to active in the input assembler so it can be rendered.
-	context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		if (render)
+		{ 
+			unsigned int stride;
+			unsigned int offset;
 
-	// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			// Set vertex buffer stride and offset.
+			stride = sizeof(Vertex);
+			offset = 0;
 
-	// Set the vertex input layout.
-	context->IASetInputLayout(inputLayout);
+			vertexBuffer = terrainCells[i].GetMesh()->GetVertextBuffer();
+			indexBuffer = terrainCells[i].GetMesh()->GetIndexBuffer();
 
-	// Set the vertex and pixel shaders that will be used to render this triangle.
-	context->VSSetShader(vertexShader, NULL, 0);
-	context->PSSetShader(pixelShader, NULL, 0);
+			// Set the vertex buffer to active in the input assembler so it can be rendered.
+			context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 
-	// Set the sampler state in the pixel shader.
-	context->PSSetSamplers(0, 1, &sampler);
+			// Set the index buffer to active in the input assembler so it can be rendered.
+			context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	// Render the triangle.
-	context->DrawIndexed(indexCount, 0, 0);
+			// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
+			context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+			// Set the vertex input layout.
+			context->IASetInputLayout(inputLayout);
+
+			// Set the vertex and pixel shaders that will be used to render this triangle.
+			context->VSSetShader(vertexShader, NULL, 0);
+			context->PSSetShader(pixelShader, NULL, 0);
+
+			// Set the sampler state in the pixel shader.
+			context->PSSetSamplers(0, 1, &sampler);
+
+			// Render the triangle.
+			context->DrawIndexed(terrainCells[i].GetMesh()->GetIndexCount(), 0, 0);
+		}
+	}
 }
 
 DXGI_FORMAT Terrain::GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID)
@@ -633,12 +662,39 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 	vertexBuffer = terrainMesh->GetVertextBuffer();
 	indexBuffer = terrainMesh->GetIndexBuffer();
 
+	InitializeTerraincCells(device, vertices);
+
 	// Release the arrays now that the buffers have been created and loaded.
 	delete[] vertices;
 	vertices = 0;
 
 	delete[] indices;
 	indices = 0;
+}
+
+void Terrain::InitializeTerraincCells(ID3D11Device* device, Vertex* terrainVertices)
+{
+	int cellHeight, cellWidth;
+	int cellRowCount;
+	int index;
+
+	cellHeight = 33;
+	cellWidth = 33;
+
+	cellRowCount = (hmInfo.terrainWidth - 1) / (cellWidth - 1);
+	terrainCellCount = cellRowCount * cellRowCount;
+
+	terrainCells = new TerrainCell[terrainCellCount];
+
+	for (int j = 0; j < cellRowCount; j++)
+	{
+		for (int i = 0; i < cellRowCount; i++)
+		{
+			index = (cellRowCount * j) + i;
+
+			terrainCells[index].InitializeBuffers(device, terrainVertices, i, j, cellHeight, cellWidth, hmInfo.terrainWidth);
+		}
+	}
 }
 
 void Terrain::InitializeShaders(ID3D11Device* device)

@@ -52,6 +52,8 @@ Game::~Game()
 
 	delete skybox;
 
+	delete frustum;
+
 	/*std::vector<GameEntity*>::iterator it;
 	for (it = entities.begin(); it < entities.end(); it++)
 	{
@@ -134,18 +136,20 @@ void Game::CreateBasicGeometry()
 	// Now, create the sampler from the description
 	HRESULT ok2 = device->CreateSamplerState(&sampDesc, &sampler);
 
-	gameTerrain = new Terrain("Debug/HeightMap/demo.png", device);
-	//gameTerrain = new Terrain(256, 256, 3.0, 0.01, 3.0, 1.5, 4, 2018);
+	//gameTerrain = new Terrain("Debug/HeightMap/demo.png", device);
+	gameTerrain = new Terrain(1024, 1024, 3.0, 0.01, 3.0, 1.5, 4, 2018);
 	gameTerrain->Initialize(device, L"Debug/Textures/grass1.jpg", L"Debug/Textures/dirt1.jpg", L"Debug/Textures/rock1.jpg");
 
 	terrainEntity = new GameEntity(gameTerrain->GetMesh(), NULL);
 
-	terrainEntity->SetTranslation(-10.0f, -10.0f, 10.0f);
+	terrainEntity->SetTranslation(-10.0f, 0.0f, 10.0f);
 	terrainEntity->SetRotation(0.0f, 0.0f, 0.0f);
 	terrainEntity->SetScale(0.1, 0.1f, 0.1f);
 	terrainEntity->SetWorldMatrix();
 
 	skybox = new Skybox("Debug/OBJ\ Files/cube.obj", L"Debug/Textures/SunnyCubeMap.dds", device);
+	
+	frustum = new FrustumCulling(1000.0f);
 }
 
 
@@ -176,6 +180,7 @@ void Game::Update(float deltaTime, float totalTime)
 		Quit();
 
 	mainCamera.Update(deltaTime, totalTime);
+	frustum->ConstructFrustum(mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
 }
 
 // --------------------------------------------------------
@@ -228,8 +233,8 @@ void Game::Draw(float deltaTime, float totalTime)
 	//		0);    // Offset to add to each index when looking up vertices
 	//}
 
-	gameTerrain->Render(context, gameTerrain->GetMesh()->GetIndexCount(), terrainEntity->GetWorldMatrix(),
-		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1);
+	gameTerrain->Render(context, terrainEntity->GetWorldMatrix(),
+		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1, frustum);
 	
 	skybox->Render(context, mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
 

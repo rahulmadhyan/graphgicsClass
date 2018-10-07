@@ -1,4 +1,5 @@
 #pragma once
+#include <DirectXMath.h>
 
 #include "DXCore.h"
 #include "SimpleShader.h"
@@ -9,7 +10,7 @@
 #include "Terrain.h"
 #include "WICTextureLoader.h"
 #include "Skybox.h"
-#include <DirectXMath.h>
+#include "FrustumCulling.h"
 
 class Game 
 	: public DXCore
@@ -68,6 +69,8 @@ private:
 	
 	//Skybox
 	Skybox* skybox;
+
+	FrustumCulling* frustum;
 
 	//Collection of entitites
 	std::vector<GameEntity*> entities;
