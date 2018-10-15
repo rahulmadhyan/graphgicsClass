@@ -142,7 +142,7 @@ void Game::CreateBasicGeometry()
 
 	terrainEntity = new GameEntity(gameTerrain->GetMesh(), NULL);
 
-	terrainEntity->SetTranslation(-10.0f, 0.0f, 10.0f);
+	terrainEntity->SetTranslation(-20.0f, 5.0f, 10.0f);
 	terrainEntity->SetRotation(0.0f, 0.0f, 0.0f);
 	terrainEntity->SetScale(0.1, 0.1f, 0.1f);
 	terrainEntity->SetWorldMatrix();

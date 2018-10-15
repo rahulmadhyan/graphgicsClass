@@ -8,7 +8,7 @@ Camera::Camera()
 
 Camera::Camera(unsigned int width, unsigned int height) : screenWidth(width), screenHeight(height)
 {
-	XMVECTOR pos = XMVectorSet(0, 0, -5, 0);
+	XMVECTOR pos = XMVectorSet(0, 5, -5, 0);
 	XMVECTOR dir = XMVectorSet(0, 0, 1, 0);
 	XMVECTOR up = XMVectorSet(0, 1, 0, 0);
 
@@ -136,7 +136,7 @@ void Camera::SetProjectionMatrix(unsigned int newWidth, unsigned int newHeight)
 
 void Camera::ResetCamera()
 {
-	XMVECTOR pos = XMVectorSet(0, 0, -5, 0);
+	XMVECTOR pos = XMVectorSet(-10, 10, -5, 0);
 	XMStoreFloat3(&position, pos);
 	xRotation = 0.0f;
 	yRotation = 0.0f;
