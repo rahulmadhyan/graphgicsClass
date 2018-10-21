@@ -11,8 +11,11 @@ public:
 	Camera(unsigned int width, unsigned int height);
 	~Camera();
 
+	DirectX::XMFLOAT3 GetPosition();
+	DirectX::XMFLOAT3 GetRotation();
 	DirectX::XMFLOAT4X4 GetViewMatrix();
 	DirectX::XMFLOAT4X4 GetProjectionMatrix();
+	
 	void Update(float deltaTime, float totalTime);
 	void SetXRotation(float amount);
 	void SetYRotation(float amount);

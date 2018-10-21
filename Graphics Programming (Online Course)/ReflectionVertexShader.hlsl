@@ -36,7 +36,7 @@ VertexToPixel main(VertexShaderInput input)
 {
 	VertexToPixel output;
 
-	intput.position.w = 1.0f;
+	input.position.w = 1.0f;
 
 	output.position = mul(input.position, world);
 	output.position = mul(output.position, view);
@@ -47,10 +47,10 @@ VertexToPixel main(VertexShaderInput input)
 	output.normal = mul(input.normal, (float3x3)world);
 	output.normal = normalize(output.normal);
 
-	outout.tangent = mul(input.tangent, (float3x3)world);
+	output.tangent = mul(input.tangent, (float3x3)world);
 	output.tangent = normalize(output.tangent);
 
-	outout.binormal = mul(input.binormal, (float3x3)world);
+	output.binormal = mul(input.binormal, (float3x3)world);
 	output.binormal = normalize(output.binormal);
 	
 	output.clip = dot(mul(input.position, world), clipPlane);
