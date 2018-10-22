@@ -10,9 +10,9 @@ Reflection::~Reflection()
 
 }
 
-void Reflection::Initialize()
+void Reflection::Initialize(ID3D11Device* device)
 {
-
+	InitializeShaders(device);
 }
 
 void Reflection::Render(ID3D11DeviceContext* context, int indexCount, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, XMFLOAT4 lightDiffuseColor, XMFLOAT3 lightDirection, float colorTextureBrightness, XMFLOAT4 clipPlane)

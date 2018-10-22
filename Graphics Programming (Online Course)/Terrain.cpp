@@ -104,7 +104,7 @@ Mesh* Terrain::GetMesh()
 	return terrainMesh; 
 }
 
-void Terrain::Initialize(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
+void Terrain::Initialize(ID3D11Device* device, bool _frustumCulling, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
 	WCHAR* rockTextureFilename)
 {
 	terrainCellCount = 0;
@@ -123,6 +123,8 @@ void Terrain::Initialize(ID3D11Device* device, WCHAR* grassTextureFilename, WCHA
 	matrixBuffer = 0;
 	lightBuffer = 0;
 
+	frustumCulling = _frustumCulling;
+
 	CalulateNormals();
 
 	CalculateTextureCoordinates();
@@ -134,43 +136,86 @@ void Terrain::Initialize(ID3D11Device* device, WCHAR* grassTextureFilename, WCHA
 	InitializeShaders(device);
 }
 
-void Terrain::Render(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum)
+void Terrain::Render(ID3D11DeviceContext* context, bool terrainShader, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum)
 {
-	SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix, dLight.AmbientColor, dLight.DiffuseColor, dLight.Direction);
+	if(terrainShader)
+		SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix, dLight.AmbientColor, dLight.DiffuseColor, dLight.Direction);
 
-	for (int i = 0; i < terrainCellCount; i++)
+	if (frustumCulling)
 	{
-		float maxWidth = terrainCells[i].GetMaxWidth();
-		float maxHeight = terrainCells[i].GetMaxHeight();
-		float maxDepth = terrainCells[i].GetMaxDepth();
+		for (int i = 0; i < terrainCellCount; i++)
+		{
+			float maxWidth = terrainCells[i].GetMaxWidth();
+			float maxHeight = terrainCells[i].GetMaxHeight();
+			float maxDepth = terrainCells[i].GetMaxDepth();
 
-		float minWidth = terrainCells[i].GetMinWidth();
-		float minHeight = terrainCells[i].GetMinHeight();
-		float minDepth = terrainCells[i].GetMinDepth();
+			float minWidth = terrainCells[i].GetMinWidth();
+			float minHeight = terrainCells[i].GetMinHeight();
+			float minDepth = terrainCells[i].GetMinDepth();
 
-		bool render = frustum->CheckRectangle2(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
+			bool render = true;
 
-		if (render)
-		{ 
-			unsigned int stride;
-			unsigned int offset;
+			render = frustum->CheckRectangle2(maxWidth, maxHeight, maxDepth, minWidth, minHeight, minDepth);
 
-			// Set vertex buffer stride and offset.
-			stride = sizeof(Vertex);
-			offset = 0;
+			if (render)
+			{
+				unsigned int stride;
+				unsigned int offset;
 
-			vertexBuffer = terrainCells[i].GetMesh()->GetVertextBuffer();
-			indexBuffer = terrainCells[i].GetMesh()->GetIndexBuffer();
+				// Set vertex buffer stride and offset.
+				stride = sizeof(Vertex);
+				offset = 0;
 
-			// Set the vertex buffer to active in the input assembler so it can be rendered.
-			context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+				vertexBuffer = terrainCells[i].GetMesh()->GetVertextBuffer();
+				indexBuffer = terrainCells[i].GetMesh()->GetIndexBuffer();
 
-			// Set the index buffer to active in the input assembler so it can be rendered.
-			context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+				// Set the vertex buffer to active in the input assembler so it can be rendered.
+				context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
 
-			// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
-			context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				// Set the index buffer to active in the input assembler so it can be rendered.
+				context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
+				// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
+				context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+				if (terrainShader)
+				{
+					// Set the vertex input layout.
+					context->IASetInputLayout(inputLayout);
+
+					// Set the vertex and pixel shaders that will be used to render this triangle.
+					context->VSSetShader(vertexShader, NULL, 0);
+					context->PSSetShader(pixelShader, NULL, 0);
+
+					// Set the sampler state in the pixel shader.
+					context->PSSetSamplers(0, 1, &sampler);
+
+					// Render the triangle.
+					context->DrawIndexed(terrainCells[i].GetMesh()->GetIndexCount(), 0, 0);
+				}
+			}
+		}
+	}
+	else
+	{
+		unsigned int stride;
+		unsigned int offset;
+
+		// Set vertex buffer stride and offset.
+		stride = sizeof(Vertex);
+		offset = 0;
+
+		// Set the vertex buffer to active in the input assembler so it can be rendered.
+		context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+
+		// Set the index buffer to active in the input assembler so it can be rendered.
+		context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+
+		// Set the type of primitive that should be rendered from this vertex buffer, in this case triangles.
+		context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		if (terrainShader)
+		{
 			// Set the vertex input layout.
 			context->IASetInputLayout(inputLayout);
 
@@ -182,9 +227,10 @@ void Terrain::Render(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLO
 			context->PSSetSamplers(0, 1, &sampler);
 
 			// Render the triangle.
-			context->DrawIndexed(terrainCells[i].GetMesh()->GetIndexCount(), 0, 0);
+			context->DrawIndexed(terrainMesh->GetIndexCount(), 0, 0);
 		}
 	}
+	
 }
 
 DXGI_FORMAT Terrain::GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID)
@@ -662,7 +708,8 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 	vertexBuffer = terrainMesh->GetVertextBuffer();
 	indexBuffer = terrainMesh->GetIndexBuffer();
 
-	InitializeTerraincCells(device, vertices);
+	if(frustumCulling)
+		InitializeTerraincCells(device, vertices);
 
 	// Release the arrays now that the buffers have been created and loaded.
 	delete[] vertices;

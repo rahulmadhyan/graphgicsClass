@@ -2,11 +2,27 @@
 
 Water::Water(float waterHeight, float waterRadius, float refractReflectScale, float specularShine, XMFLOAT2 normalMapTiling, XMFLOAT4 refractionTint)
 {
-
+	this->waterHeight = waterHeight;
+	this->waterRadius = waterRadius;
+	this->reflectRefractScale = refractReflectScale;
+	this->specularShine = specularShine;
+	this->normalMapTiling = normalMapTiling;
+	this->refractionTint = refractionTint;
 }
 
 Water::~Water()
 {
+
+}
+
+float Water::GetHeight()
+{
+	return waterHeight;
+}
+
+XMFLOAT4X4 Water::GetReflectionMatrix()
+{
+	return reflectionMatrix;
 }
 
 Mesh* Water::GetMesh()
@@ -17,6 +33,7 @@ void Water::Initialize(ID3D11Device* device, WCHAR* fileName)
 {
 	InitializeBuffers(device);
 	LoadTextures(device, fileName);
+	InitializeShaders(device);
 }
 
 void Water::Update()
@@ -46,8 +63,8 @@ void Water::RenderReflection(XMFLOAT3 cameraPosition, XMFLOAT3 cameraRotation)
 	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
 
 	// transform 'direction' and 'up' vector my rotation matrix so the view rotated correctly at origin
-	direction = XMVector3TransformCoord(direction, rotation);
-	up = XMVector3TransformCoord(up, rotation);
+	direction = XMVector3Transform(direction, rotation);
+	up = XMVector3Cross(up, direction);
 
 	// translate rotated camera position to location of viewer
 	direction = direction + position;
@@ -63,10 +80,10 @@ void Water::RenderReflection(XMFLOAT3 cameraPosition, XMFLOAT3 cameraRotation)
 
 void Water::Render(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix,
 	XMFLOAT4X4 reflectionMatrix, ID3D11ShaderResourceView* refractionTexture,
-	ID3D11ShaderResourceView* reflectionTexture, ID3D11ShaderResourceView* normalTexture,
+	ID3D11ShaderResourceView* reflectionTexture,
 	XMFLOAT3 cameraPosition, XMFLOAT3 lightDirection)
 {
-	SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix, reflectionMatrix, refractionTexture, reflectionTexture, normalTexture, cameraPosition, lightDirection);
+	SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix, reflectionMatrix, refractionTexture, reflectionTexture, cameraPosition, lightDirection);
 
 	unsigned int stride;
 	unsigned int offset;
@@ -95,7 +112,7 @@ void Water::InitializeBuffers(ID3D11Device* device)
 	Vertex* vertices;
 	UINT* indices;
 
-	int vertexCount = 4;
+	int vertexCount = 6;
 	int indexCount = 6;
 
 	vertices = new Vertex[vertexCount];
@@ -111,22 +128,22 @@ void Water::InitializeBuffers(ID3D11Device* device)
 	vertices[2].Position = XMFLOAT3(-waterRadius, 0.0f, -waterRadius);  // Bottom left.
 	vertices[2].UV = XMFLOAT2(0.0f, 1.0f);
 
-	//vertices[3].Position = XMFLOAT3(-waterRadius, 0.0f, -waterRadius);  // Bottom left.
-	//vertices[3].UV = XMFLOAT2(0.0f, 1.0f);
+	vertices[3].Position = XMFLOAT3(-waterRadius, 0.0f, -waterRadius);  // Bottom left.
+	vertices[3].UV = XMFLOAT2(0.0f, 1.0f);
 
-	//vertices[4].Position = XMFLOAT3(waterRadius, 0.0f, waterRadius);  // Top right.
-	//vertices[4].UV = XMFLOAT2(1.0f, 0.0f);
+	vertices[4].Position = XMFLOAT3(waterRadius, 0.0f, waterRadius);  // Top right.
+	vertices[4].UV = XMFLOAT2(1.0f, 0.0f);
 
-	vertices[3].Position = XMFLOAT3(waterRadius, 0.0f, -waterRadius);  // Bottom right.
-	vertices[3].UV = XMFLOAT2(1.0f, 1.0f);
+	vertices[5].Position = XMFLOAT3(waterRadius, 0.0f, -waterRadius);  // Bottom right.
+	vertices[5].UV = XMFLOAT2(1.0f, 1.0f);
 
 	// Load the index array with data.
 	indices[0] = 0;
 	indices[1] = 1;
 	indices[2] = 2;
-	indices[3] = 2;
-	indices[4] = 1;
-	indices[5] = 3;
+	indices[3] = 3;
+	indices[4] = 4;
+	indices[5] = 5;
 
 	waterMesh = new Mesh(vertices, vertexCount, indices, indexCount, device);
 
@@ -145,7 +162,7 @@ void Water::LoadTextures(ID3D11Device* device, WCHAR* fileName)
 	CreateDDSTextureFromFile(device, fileName, 0, & waterTexture);
 }
 
-void Water::InitializeShaders(ID3D11Device* device, HWND hwnd)
+void Water::InitializeShaders(ID3D11Device* device)
 {
 	unsigned int numElements;
 	ID3DBlob* vertexShaderBuffer;
@@ -236,7 +253,7 @@ void Water::InitializeShaders(ID3D11Device* device, HWND hwnd)
 
 void Water::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix,
 	XMFLOAT4X4 reflectionMatrix, ID3D11ShaderResourceView* refractionTexture,
-	ID3D11ShaderResourceView* reflectionTexture, ID3D11ShaderResourceView* normalTexture,
+	ID3D11ShaderResourceView* reflectionTexture,
 	XMFLOAT3 cameraPosition, XMFLOAT3 lightDirection)
 {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -269,7 +286,6 @@ void Water::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMa
 	dataPtr2->normalMapTiling = normalMapTiling;
 	dataPtr2->padding2 = XMFLOAT2(0.0f, 0.0f);
 
-
 	context->Unmap(cameraNormalBuffer, 0);
 
 	bufferNumber = 1;
@@ -295,5 +311,5 @@ void Water::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMa
 
 	context->PSSetShaderResources(0, 1, &refractionTexture);
 	context->PSSetShaderResources(1, 1, &reflectionTexture);
-	context->PSSetShaderResources(2, 1, &normalTexture);
+	context->PSSetShaderResources(2, 1, &waterTexture);
 }

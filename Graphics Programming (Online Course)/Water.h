@@ -8,6 +8,8 @@ public:
 	Water(float waterHeight, float waterRadius, float refractReflectScale, float specularShine, XMFLOAT2 normalMapTiling, XMFLOAT4 refractionTint);
 	~Water();
 
+	float GetHeight();
+	XMFLOAT4X4 GetReflectionMatrix();
 	Mesh* GetMesh();
 
 	void Initialize(ID3D11Device* device, WCHAR* fileName);
@@ -15,7 +17,7 @@ public:
 	void RenderReflection(XMFLOAT3 cameraPosition, XMFLOAT3 cameraRotation);
 	void Render(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix,
 		XMFLOAT4X4 reflectionMatrix, ID3D11ShaderResourceView* refractionTexture,
-		ID3D11ShaderResourceView* reflectionTexture, ID3D11ShaderResourceView* normalTexture,
+		ID3D11ShaderResourceView* reflectionTexture,
 		XMFLOAT3 cameraPosition, XMFLOAT3 lightDirection);
 
 private:
@@ -72,10 +74,10 @@ private:
 	void InitializeBuffers(ID3D11Device* device);
 	void LoadTextures(ID3D11Device* device, WCHAR* fileName);
 
-	void InitializeShaders(ID3D11Device* device, HWND hwnd);
+	void InitializeShaders(ID3D11Device* device);
 	void SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix,
 		XMFLOAT4X4 reflectionMatrix, ID3D11ShaderResourceView* refractionTexture,
-		ID3D11ShaderResourceView* reflectionTexture, ID3D11ShaderResourceView* normalTexture,
+		ID3D11ShaderResourceView* reflectionTexture,
 		XMFLOAT3 cameraPosition, XMFLOAT3 lightDirection);
  };
 

@@ -11,6 +11,9 @@
 #include "WICTextureLoader.h"
 #include "Skybox.h"
 #include "FrustumCulling.h"
+#include "RenderTexture.h"
+#include "Reflection.h"
+#include "Water.h"
 
 class Game 
 	: public DXCore
@@ -39,6 +42,9 @@ private:
 	void CreateBasicGeometry();
 	void CreateCamera();
 
+	void RenderRefraction();
+	void RenderReflection();
+
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;
 	SimplePixelShader* pixelShader;
@@ -52,6 +58,8 @@ private:
 	Mesh* mesh2;
 	Mesh* mesh3;
 
+	ID3D11ShaderResourceView* srv1;
+
 	//Material
 	Material *material1;
 	Material *material2;
@@ -63,14 +71,22 @@ private:
 	GameEntity* entity4;
 	GameEntity* entity5;
 	GameEntity* terrainEntity;
+	GameEntity* refractionTextureEntity;
+	GameEntity* reflectionTextureEntity;
+	GameEntity* waterEntity;
 
 	//Terrain
 	Terrain* gameTerrain;
 	
 	//Skybox
 	Skybox* skybox;
-
 	FrustumCulling* frustum;
+
+	//Water
+	RenderTexture* refrationTexture;
+	RenderTexture* reflectionTexture;
+	Reflection* reflection;
+	Water* water;
 
 	//Collection of entitites
 	std::vector<GameEntity*> entities;

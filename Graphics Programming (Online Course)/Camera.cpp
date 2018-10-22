@@ -33,6 +33,16 @@ void Camera::CreateMatrices()
 	
 }
 
+DirectX::XMFLOAT3 Camera::GetPosition()
+{
+	return position;
+}
+
+DirectX::XMFLOAT3 Camera::GetRotation()
+{
+	return XMFLOAT3(xRotation, yRotation, 0.0f);
+}
+
 XMFLOAT4X4 Camera::GetViewMatrix()
 {
 	return viewMatrix;

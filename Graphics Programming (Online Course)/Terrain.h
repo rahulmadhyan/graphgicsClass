@@ -35,9 +35,9 @@ public:
 	int GetTerrainCellCount();
 	Mesh* GetMesh();
 	
-	void Initialize(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
+	void Initialize(ID3D11Device* device, bool frustumCulling, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
 		WCHAR* rockTextureFilename);
-	void Render(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum);
+	void Render(ID3D11DeviceContext* context, bool terrainShader, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum);
 	
 private:
 
@@ -55,6 +55,8 @@ private:
 		XMFLOAT3 lightDirection;
 		float padding;
 	};
+
+	bool frustumCulling;
 
 	int terrainCellCount;
 

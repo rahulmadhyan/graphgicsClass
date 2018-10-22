@@ -58,12 +58,12 @@ float4 main(VertexToPixel input) : SV_TARGET
 	normal = normalize(normal1 + normal2);
 
 	// calculate projected refraction texture coordinates
-	refractionUV.x = input.refractionPosition.x / input.position.w / 2.0f + 0.5f;
-	refractionUV.y = -input.refractionPosition.y / input.position.w / 2.0f + 0.5f;
+	refractionUV.x = input.refractionPosition.x / input.refractionPosition.w / 2.0f + 0.5f;
+	refractionUV.y = -input.refractionPosition.y / input.refractionPosition.w / 2.0f + 0.5f;
 
 	// calcualte projected reflection texture coodinates
-	reflectionUV.x = input.reflectionPosition.x / input.position.w / 2.0f + 0.5f;
-	reflectionUV.y = input.reflectionPosition.y / input.position.w / 2.0f + 0.5f;
+	reflectionUV.x = input.reflectionPosition.x / input.reflectionPosition.w / 2.0f + 0.5f;
+	reflectionUV.y = -input.reflectionPosition.y / input.reflectionPosition.w / 2.0f + 0.5f;
 
 	// repostion the texture coordinates sampling position by the scaled normal map value to simulate the rippling wave effect
 	reflectionUV = reflectionUV + (normal.xy * reflectRefractScale);
@@ -77,9 +77,9 @@ float4 main(VertexToPixel input) : SV_TARGET
 	refractionColor = saturate(refractionColor * refractionTint);
 
 	// height based vector for fresnel calculation
-	heightView.x = input.viewDirection.x;
+	heightView.x = input.viewDirection.y;
 	heightView.y = input.viewDirection.y;
-	heightView.z = input.viewDirection.z;
+	heightView.z = input.viewDirection.y;
 
 	// calculate fresnel term based on height
 	r = (1.2f - 1.0f) / (1.2f + 1.0f);
@@ -94,7 +94,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 	// calcualte specular light based on the reflection and the camera position
 	specular = dot(normalize(reflection), normalize(input.viewDirection));
 
-	if (specular > 1.0f)
+	if (specular > 0.0f)
 	{
 		specular = pow(specular, specularShine);
 
