@@ -63,14 +63,14 @@ void Water::RenderReflection(XMFLOAT3 cameraPosition, XMFLOAT3 cameraRotation)
 	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
 
 	// transform 'direction' and 'up' vector my rotation matrix so the view rotated correctly at origin
-	direction = XMVector3Transform(direction, rotation);
-	up = XMVector3Cross(up, direction);
+	direction = XMVector3TransformCoord(direction, rotation);
+	up = XMVector3TransformCoord(up, rotation);
 
 	// translate rotated camera position to location of viewer
 	direction = direction + position;
 
 	// create reflection view matrix from updated vectors
-	XMMATRIX RV = XMMatrixLookToLH(
+	XMMATRIX RV = XMMatrixLookAtLH(
 		position,  
 		direction,  
 		up);  

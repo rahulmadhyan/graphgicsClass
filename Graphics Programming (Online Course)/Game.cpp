@@ -136,8 +136,10 @@ void Game::CreateBasicGeometry()
 	// Now, create the sampler from the description
 	HRESULT ok2 = device->CreateSamplerState(&sampDesc, &sampler);
 
+	CreateWICTextureFromFile(device, L"Debug/Textures/grass1.jpg", 0, &srv1);
+
 	//gameTerrain = new Terrain("Debug/HeightMap/demo.png", device);
-	gameTerrain = new Terrain(256, 256, 3.0, 0.01, 3.0, 1.5, 4, 2018);
+	gameTerrain = new Terrain(256, 256, 3.0, 0.01, 7.0, 2.5, 4, 2018);
 	gameTerrain->Initialize(device, false, L"Debug/Textures/grass1.jpg", L"Debug/Textures/dirt1.jpg", L"Debug/Textures/rock1.jpg");
 
 	terrainEntity = new GameEntity(gameTerrain->GetMesh(), NULL);
@@ -153,30 +155,26 @@ void Game::CreateBasicGeometry()
 
 	refrationTexture = new RenderTexture();	
 	refrationTexture->Initialize(device, width, height, 1000.0f, 0.1f);
-	refractionTextureEntity = new GameEntity();
-	refractionTextureEntity->SetTranslation(0.0f, 0.0f, 0.0f);
-	refractionTextureEntity->SetRotation(0.0f, 0.0f, 0.0f);
-	refractionTextureEntity->SetScale(1.0f, 1.0f, 1.0f);
-	refractionTextureEntity->SetWorldMatrix();
 
 	reflectionTexture = new RenderTexture();
 	reflectionTexture->Initialize(device, width, height, 1000.0f, 0.1f);
-	reflectionTextureEntity = new GameEntity();
-	reflectionTextureEntity->SetTranslation(0.0f, 0.0f, 0.0f);
-	reflectionTextureEntity->SetRotation(0.0f, 0.0f, 0.0f);
-	reflectionTextureEntity->SetScale(1.0f, 1.0f, 1.0f);
-	reflectionTextureEntity->SetWorldMatrix();
 
 	reflection = new Reflection();
 	reflection->Initialize(device);
 
-	water = new Water(3.75f, 110.0f, 0.03f, 200.0f, XMFLOAT2(0.01f, 0.02f), XMFLOAT4(0.0f, 0.8f, 1.0f, 1.0f));
+	water = new Water(5.0f, 75.0f, 0.03f, 100.0f, XMFLOAT2(0.01f, 0.02f), XMFLOAT4(0.0f, 0.0f, 0.1f, 1.0f));
 	water->Initialize(device, L"Debug/Textures/WaterNormal.dds");
 	waterEntity = new GameEntity(water->GetMesh(), NULL);
-	waterEntity->SetTranslation(-20.0f, 5.0f, 10.0f);
+	waterEntity->SetTranslation(0.0f, 5.0f, 30.0f);
 	waterEntity->SetRotation(0.0f, 0.0f, 0.0f);
 	waterEntity->SetScale(0.1, 0.1f, 0.1f);
 	waterEntity->SetWorldMatrix();
+
+	entity1 = new GameEntity(NULL, NULL);
+	entity1->SetTranslation(0.0f, 0.0f, 0.0f);
+	entity1->SetRotation(0.0f, 0.0f, 0.0f);
+	entity1->SetScale(0.0f, 0.0f, 0.0f);
+	entity1->SetWorldMatrix();
 }
 
 
@@ -206,9 +204,9 @@ void Game::RenderRefraction()
 
 	gameTerrain->Render(context, false, terrainEntity->GetWorldMatrix(),
 		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1, frustum);
-
+	
 	reflection->Render(context, gameTerrain->GetMesh()->GetIndexCount(), terrainEntity->GetWorldMatrix(),
-		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), 0, 0, dLight1.DiffuseColor, dLight1.Direction,
+		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), srv1, srv1, dLight1.DiffuseColor, dLight1.Direction,
 		2.0f, clipPlane);
 
 	context->OMSetRenderTargets(1, &backBufferRTV, depthStencilView);
@@ -232,7 +230,7 @@ void Game::RenderReflection()
 		reflectionViewMatrix, mainCamera.GetProjectionMatrix(), dLight1, frustum);
 
 	reflection->Render(context, gameTerrain->GetMesh()->GetIndexCount(), terrainEntity->GetWorldMatrix(),
-		reflectionViewMatrix, mainCamera.GetProjectionMatrix(), 0, 0, dLight1.DiffuseColor, dLight1.Direction,
+		reflectionViewMatrix, mainCamera.GetProjectionMatrix(), srv1, srv1, dLight1.DiffuseColor, dLight1.Direction,
 		2.0f, clipPlane);
 
 	context->OMSetRenderTargets(1, &backBufferRTV, depthStencilView);
@@ -251,6 +249,10 @@ void Game::Update(float deltaTime, float totalTime)
 	mainCamera.Update(deltaTime, totalTime);
 	frustum->ConstructFrustum(mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
 	water->Update();
+
+	RenderRefraction();
+
+	RenderReflection();
 }
 
 // --------------------------------------------------------
@@ -276,10 +278,6 @@ void Game::Draw(float deltaTime, float totalTime)
 	//  - This is actually a complex process of copying data to a local buffer
 	//    and then copying that entire buffer to the GPU.  
 	//  - The "SimpleShader" class handles all of that for you.
-
-	//RenderRefraction();
-
-	RenderReflection();
 
 	//std::vector<GameEntity*>::iterator it;
 	//for (it = entities.begin(); it < entities.end(); it++)
@@ -307,16 +305,19 @@ void Game::Draw(float deltaTime, float totalTime)
 	//		0);    // Offset to add to each index when looking up vertices
 	//}
 
-	//water->RenderReflection(mainCamera.GetPosition(), mainCamera.GetRotation());
+	water->RenderReflection(mainCamera.GetPosition(), mainCamera.GetRotation());
 
-	//skybox->Render(context, mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
+	skybox->Render(context, mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
 
-	//gameTerrain->Render(context, true, terrainEntity->GetWorldMatrix(),
-	//	mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1, frustum);
+	gameTerrain->Render(context, true, terrainEntity->GetWorldMatrix(),
+		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1, frustum);
 	
 	water->Render(context, waterEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(),
 		mainCamera.GetProjectionMatrix(), water->GetReflectionMatrix(), refrationTexture->GetShaderResourceView(),
 		reflectionTexture->GetShaderResourceView(), mainCamera.GetPosition(), dLight1.Direction);
+
+	/*ID3D11ShaderResourceView* null[] = { nullptr, nullptr };
+	context->PSSetShaderResources(0, 2, null);*/
 
 	swapChain->Present(0, 0);
 }
