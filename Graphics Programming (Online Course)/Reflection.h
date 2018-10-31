@@ -12,7 +12,7 @@ public:
 	~Reflection();
 
 	void Initialize(ID3D11Device* device);
-	void Render(ID3D11DeviceContext* context, int indexCount, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, XMFLOAT4 lightDiffuseColor, XMFLOAT3 lightDirection, float colorTextureBrightness, XMFLOAT4 clipPlane);
+	void Render(ID3D11DeviceContext* context, int indexCount, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, ID3D11ShaderResourceView* colorTexture1, ID3D11ShaderResourceView* colorTexture2, ID3D11ShaderResourceView* colorTexture3, ID3D11ShaderResourceView* normalTexture, XMFLOAT4 lightDiffuseColor, XMFLOAT3 lightDirection, float colorTextureBrightness, XMFLOAT4 clipPlane);
 
 private:
 	struct MatrixBuffer
@@ -43,6 +43,6 @@ private:
 	ID3D11Buffer* lightBuffer;
 
 	void InitializeShaders(ID3D11Device* device);
-	void SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, XMFLOAT4 lightDiffuseColor, XMFLOAT3 lightDirection, float colorTextureBrightness, XMFLOAT4 clipPlane);
+	void SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, ID3D11ShaderResourceView* colorTexture1, ID3D11ShaderResourceView* colorTexture2, ID3D11ShaderResourceView* colorTexture3, ID3D11ShaderResourceView* normalTexture, XMFLOAT4 lightDiffuseColor, XMFLOAT3 lightDirection, float colorTextureBrightness, XMFLOAT4 clipPlane);
 };
 

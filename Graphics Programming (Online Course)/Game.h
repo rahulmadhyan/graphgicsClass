@@ -38,41 +38,17 @@ public:
 private:
 
 	// Initialization helper methods - feel free to customize, combine, etc.
-	void LoadShaders(); 
 	void CreateBasicGeometry();
 	void CreateCamera();
 
 	void RenderRefraction();
 	void RenderReflection();
 
-	// Wrappers for DirectX shaders to provide simplified functionality
-	SimpleVertexShader* vertexShader;
-	SimplePixelShader* pixelShader;
-
 	// Keeps track of the old mouse position.  Useful for 
 	// determining how far the mouse moved in a single frame.
 	POINT prevMousePos;
 
-	//Mesh
-	Mesh* mesh1;
-	Mesh* mesh2;
-	Mesh* mesh3;
-
-	ID3D11ShaderResourceView* srv1;
-
-	//Material
-	Material *material1;
-	Material *material2;
-
-	//GameEntity
-	GameEntity* entity1;
-	GameEntity* entity2;
-	GameEntity* entity3;
-	GameEntity* entity4;
-	GameEntity* entity5;
 	GameEntity* terrainEntity;
-	GameEntity* refractionTextureEntity;
-	GameEntity* reflectionTextureEntity;
 	GameEntity* waterEntity;
 
 	//Terrain
@@ -83,13 +59,10 @@ private:
 	FrustumCulling* frustum;
 
 	//Water
-	RenderTexture* refrationTexture;
+	RenderTexture* refractionTexture;
 	RenderTexture* reflectionTexture;
 	Reflection* reflection;
 	Water* water;
-
-	//Collection of entitites
-	std::vector<GameEntity*> entities;
 
 	//Main Camera
 	Camera mainCamera;
@@ -97,7 +70,5 @@ private:
 	//Lights
 	DirectionalLight dLight;
 	DirectionalLight dLight1;
-	
-	ID3D11SamplerState* sampler;
 };
 

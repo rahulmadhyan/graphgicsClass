@@ -33,10 +33,14 @@ public:
 	~Terrain();
 
 	int GetTerrainCellCount();
+
+	ID3D11ShaderResourceView* GetColorTexture1();
+	ID3D11ShaderResourceView* GetColorTexture2();
+	ID3D11ShaderResourceView* GetColorTexture3();
+	
 	Mesh* GetMesh();
 	
-	void Initialize(ID3D11Device* device, bool frustumCulling, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
-		WCHAR* rockTextureFilename);
+	void Initialize(ID3D11Device* device, bool _frustumCulling, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename);
 	void Render(ID3D11DeviceContext* context, bool terrainShader, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum);
 	
 private:
@@ -70,6 +74,7 @@ private:
 	ID3D11ShaderResourceView* grassTexture;
 	ID3D11ShaderResourceView* slopeTexture;
 	ID3D11ShaderResourceView* rockTexture;
+	ID3D11ShaderResourceView* normalTexture;
 
 	ID3D11VertexShader* vertexShader;
 	ID3D11PixelShader* pixelShader;
@@ -91,12 +96,11 @@ private:
 	
 	void CalulateNormals();
 	void CalculateTextureCoordinates();
-	void LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename);
+	void LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename);
 	void InitializeBuffers(ID3D11Device* device);
 	void InitializeTerraincCells(ID3D11Device* device, Vertex* terrainVertices);
 
 	void InitializeShaders(ID3D11Device* device);
-	void SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix,
-		XMFLOAT4X4 projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection);
+	void SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection);
 };
 

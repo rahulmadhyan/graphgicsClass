@@ -8,16 +8,70 @@ Water::Water(float waterHeight, float waterRadius, float refractReflectScale, fl
 	this->specularShine = specularShine;
 	this->normalMapTiling = normalMapTiling;
 	this->refractionTint = refractionTint;
+	this->waterTranslation = 0.0f;
 }
 
 Water::~Water()
 {
+	delete waterMesh;
+	waterMesh = 0;
 
+	if (waterTexture)
+	{
+		waterTexture->Release();
+	}
+
+	if (vertexShader)
+	{
+		vertexShader->Release();
+		vertexShader = 0;
+	}
+
+	if (pixelShader)
+	{
+		pixelShader->Release();
+		pixelShader = 0;
+	}
+
+	if (inputLayout)
+	{
+		inputLayout->Release();
+		inputLayout = 0;
+	}
+
+	if(sampler)
+	{
+		sampler->Release();
+		sampler = 0;
+	}
+
+	if (matrixBuffer)
+	{
+		matrixBuffer->Release();
+		matrixBuffer = 0;
+	}
+
+	if(cameraNormalBuffer)
+	{
+		cameraNormalBuffer->Release();
+		cameraNormalBuffer = 0;
+	}
+
+	if (waterBuffer)
+	{
+		waterBuffer->Release();
+		waterBuffer = 0;
+	}
 }
 
 float Water::GetHeight()
 {
 	return waterHeight;
+}
+
+ID3D11ShaderResourceView* Water::GetNormalTexture()
+{
+	return waterTexture;
 }
 
 XMFLOAT4X4 Water::GetReflectionMatrix()
@@ -29,6 +83,7 @@ Mesh* Water::GetMesh()
 {
 	return waterMesh;
 }
+
 void Water::Initialize(ID3D11Device* device, WCHAR* fileName)
 {
 	InitializeBuffers(device);
@@ -38,7 +93,7 @@ void Water::Initialize(ID3D11Device* device, WCHAR* fileName)
 
 void Water::Update()
 {
-	waterTranslation += 0.003f;
+	waterTranslation += 0.0003f;
 	if (waterTranslation > 1.0f)
 	{
 		waterTranslation -= 1.0f;
@@ -56,9 +111,9 @@ void Water::RenderReflection(XMFLOAT3 cameraPosition, XMFLOAT3 cameraRotation)
 
 	// set roll, pitch & yaw rotation in radian
 	// invert X rotation for reflection
-	float pitch = -cameraRotation.x * 0.0174532925f;
-	float yaw = cameraRotation.y * 0.0174532925f;
-	float roll = cameraRotation.z * 0.0174532925f;
+	float pitch = -cameraRotation.x;
+	float yaw = cameraRotation.y;
+	float roll = cameraRotation.z;
 
 	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
 

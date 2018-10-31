@@ -9,15 +9,17 @@ cbuffer MatrixBuffer
 struct VertexInputType
 {
 	float4 position : POSITION;
-	float2 tex : TEXCOORD;
-	float3 normal : NORMAL;
+	float2 tex		: TEXCOORD;
+	float3 normal	: NORMAL;
+	float3 tangent	: TANGENT;
 };
 
 struct PixelInputType
 {
 	float4 position : SV_POSITION;
-	float2 tex : TEXCOORD;
-	float3 normal : NORMAL;
+	float2 tex		: TEXCOORD;
+	float3 normal	: NORMAL;
+	float3 tangent	: TANGENT;
 };
 
 PixelInputType main(VertexInputType input)
@@ -40,6 +42,10 @@ PixelInputType main(VertexInputType input)
 
 	// Normalize the normal vector.
 	output.normal = normalize(output.normal);
+
+	output.tangent = mul(input.tangent, (float3x3)worldMatrix);
+
+	output.tangent = normalize(input.tangent);
 
 	return output;
 }

@@ -24,9 +24,12 @@ Terrain::~Terrain()
 	delete terrainMesh;
 	terrainMesh = 0;
 
-	delete[] terrainCells;
-	terrainCells = 0;
-
+	if (frustumCulling)
+	{
+		delete[] terrainCells;
+		terrainCells = 0;
+	}
+	
 	delete[] hmInfo.heightMap;
 	hmInfo.heightMap = 0;
 
@@ -92,6 +95,11 @@ Terrain::~Terrain()
 	{
 		rockTexture->Release();
 	}
+
+	if (normalTexture)
+	{
+		normalTexture->Release();
+	}
 }
 
 int Terrain::GetTerrainCellCount()
@@ -99,13 +107,27 @@ int Terrain::GetTerrainCellCount()
 	return terrainCellCount;
 }
 
+ID3D11ShaderResourceView* Terrain::GetColorTexture1()
+{
+	return grassTexture;
+}
+
+ID3D11ShaderResourceView* Terrain::GetColorTexture2()
+{
+	return slopeTexture;
+}
+
+ID3D11ShaderResourceView* Terrain::GetColorTexture3()
+{
+	return rockTexture;
+}
+
 Mesh* Terrain::GetMesh()
 {
 	return terrainMesh; 
 }
 
-void Terrain::Initialize(ID3D11Device* device, bool _frustumCulling, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename,
-	WCHAR* rockTextureFilename)
+void Terrain::Initialize(ID3D11Device* device, bool _frustumCulling, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename)
 {
 	terrainCellCount = 0;
 
@@ -129,7 +151,7 @@ void Terrain::Initialize(ID3D11Device* device, bool _frustumCulling, WCHAR* gras
 
 	CalculateTextureCoordinates();
 
-	LoadTextures(device, grassTextureFilename, slopeTextureFilename, rockTextureFilename);
+	LoadTextures(device, grassTextureFilename, slopeTextureFilename, rockTextureFilename, normalTextureFilename);
 
 	InitializeBuffers(device);
 
@@ -592,11 +614,12 @@ void Terrain::CalculateTextureCoordinates()
 	}
 }
 
-void Terrain::LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename)
+void Terrain::LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename)
 {
 	CreateWICTextureFromFile(device, grassTextureFilename, 0, &grassTexture);
 	CreateWICTextureFromFile(device, slopeTextureFilename, 0, &slopeTexture);
 	CreateWICTextureFromFile(device, rockTextureFilename, 0, &rockTexture);
+	CreateDDSTextureFromFile(device, normalTextureFilename, 0, &normalTexture);
 }
 
 void Terrain::InitializeBuffers(ID3D11Device* device)
@@ -749,7 +772,7 @@ void Terrain::InitializeShaders(ID3D11Device* device)
 	HRESULT result;
 	ID3DBlob* vertexShaderBuffer;
 	ID3DBlob* pixelShaderBuffer;
-	D3D11_INPUT_ELEMENT_DESC inputLayoutDesc[3];
+	D3D11_INPUT_ELEMENT_DESC inputLayoutDesc[4];
 	unsigned int numElements;
 	D3D11_SAMPLER_DESC samplerDesc;
 	D3D11_BUFFER_DESC matrixBufferDesc;
@@ -799,6 +822,14 @@ void Terrain::InitializeShaders(ID3D11Device* device)
 	inputLayoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	inputLayoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	inputLayoutDesc[2].InstanceDataStepRate = 0;
+
+	inputLayoutDesc[3].SemanticName = "TANGENT";
+	inputLayoutDesc[3].SemanticIndex = 0;
+	inputLayoutDesc[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	inputLayoutDesc[3].InputSlot = 0;
+	inputLayoutDesc[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	inputLayoutDesc[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	inputLayoutDesc[3].InstanceDataStepRate = 0;
 
 	// Get a count of the elements in the layout.
 	numElements = sizeof(inputLayoutDesc) / sizeof(inputLayoutDesc[0]);
@@ -914,4 +945,5 @@ void Terrain::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 world
 	context->PSSetShaderResources(0, 1, &grassTexture);
 	context->PSSetShaderResources(1, 1, &slopeTexture);
 	context->PSSetShaderResources(2, 1, &rockTexture);
+	context->PSSetShaderResources(3, 1, &normalTexture);
 }

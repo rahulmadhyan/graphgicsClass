@@ -7,7 +7,51 @@ Reflection::Reflection()
 
 Reflection::~Reflection()
 {
+	// Release the sampler state.
+	if (sampler)
+	{
+		sampler->Release();
+		sampler = 0;
+	}
 
+	// Release the layout.
+	if (inputLayout)
+	{
+		inputLayout->Release();
+		inputLayout = 0;
+	}
+
+	// Release the pixel shader.
+	if (pixelShader)
+	{
+		pixelShader->Release();
+		pixelShader = 0;
+	}
+
+	// Release the vertex shader.
+	if (vertexShader)
+	{
+		vertexShader->Release();
+		vertexShader = 0;
+	}
+
+	if(matrixBuffer)
+	{
+		matrixBuffer->Release();
+		matrixBuffer = 0;
+	}
+	
+	if (clipPlaneBuffer)
+	{
+		clipPlaneBuffer->Release();
+		clipPlaneBuffer = 0;
+	}
+
+	if (lightBuffer)
+	{
+		lightBuffer->Release();
+		lightBuffer = 0;
+	}	
 }
 
 void Reflection::Initialize(ID3D11Device* device)
@@ -15,9 +59,9 @@ void Reflection::Initialize(ID3D11Device* device)
 	InitializeShaders(device);
 }
 
-void Reflection::Render(ID3D11DeviceContext* context, int indexCount, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, XMFLOAT4 lightDiffuseColor, XMFLOAT3 lightDirection, float colorTextureBrightness, XMFLOAT4 clipPlane)
+void Reflection::Render(ID3D11DeviceContext* context, int indexCount, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, ID3D11ShaderResourceView* colorTexture1, ID3D11ShaderResourceView* colorTexture2, ID3D11ShaderResourceView* colorTexture3, ID3D11ShaderResourceView* normalTexture, XMFLOAT4 lightDiffuseColor, XMFLOAT3 lightDirection, float colorTextureBrightness, XMFLOAT4 clipPlane)
 {
-	SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix, colorTexture, normalTexture, lightDiffuseColor, lightDirection, colorTextureBrightness, clipPlane);
+	SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix, colorTexture1, colorTexture2, colorTexture3, normalTexture, lightDiffuseColor, lightDirection, colorTextureBrightness, clipPlane);
 
 	context->IASetInputLayout(inputLayout);
 
@@ -150,7 +194,7 @@ void Reflection::InitializeShaders(ID3D11Device* device)
 	device->CreateBuffer(&lightBufferDescription, NULL, &lightBuffer);
 }
 
-void Reflection::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, XMFLOAT4 lightDiffuseColor, XMFLOAT3 lightDirection, float colorTextureBrightness, XMFLOAT4 clipPlane)
+void Reflection::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, ID3D11ShaderResourceView* colorTexture1, ID3D11ShaderResourceView* colorTexture2, ID3D11ShaderResourceView* colorTexture3, ID3D11ShaderResourceView* normalTexture, XMFLOAT4 lightDiffuseColor, XMFLOAT3 lightDirection, float colorTextureBrightness, XMFLOAT4 clipPlane)
 {
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	unsigned int bufferNumber;
@@ -198,7 +242,9 @@ void Reflection::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 wo
 
 	context->PSSetConstantBuffers(bufferNumber, 1, &lightBuffer);
 
-	context->PSSetShaderResources(0, 1, &colorTexture);
-	context->PSSetShaderResources(1, 1, &normalTexture);
+	context->PSSetShaderResources(0, 1, &colorTexture1);
+	context->PSSetShaderResources(1, 1, &colorTexture2);
+	context->PSSetShaderResources(2, 1, &colorTexture3);
+	context->PSSetShaderResources(3, 1, &normalTexture);
 }
 

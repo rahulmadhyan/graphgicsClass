@@ -1,6 +1,8 @@
 
-Texture2D colorTexture		: register(t0);
-Texture2D normalTexture		: register(t1);
+Texture2D colorTexture1		: register(t0);
+Texture2D colorTexture2		: register(t1);
+Texture2D colorTexture3		: register(t2);
+Texture2D normalTexture		: register(t3);
 SamplerState basicSampler	: register(s0);
 
 cbuffer lightBuffer : register(b0)
@@ -33,10 +35,19 @@ float4 main(VertexToPixel input) : SV_TARGET
 	// invert light direction
 	lightDir = -lightDirection;
 
-	textureColor = colorTexture.Sample(basicSampler, input.uv);
+	float3 blending = abs(input.normal);
+	// force weights to sum to 1.0
+	float b = blending.x + blending.y + blending.z;
+	blending /= float3(b, b, b);
+
+	float4 x = colorTexture3.Sample(basicSampler, input.uv).xyzw;
+	float4 y = colorTexture2.Sample(basicSampler, input.uv).xyzw;
+	float4 z = colorTexture1.Sample(basicSampler, input.uv).xyzw;
+
+	textureColor = x * blending.x + y * blending.y + z * blending.z;
 
 	// combine color map value with texture color
-	textureColor = saturate(input.color * textureColor * colorTextureBrightness);
+	textureColor = saturate(textureColor * colorTextureBrightness);
 
 	// calculate bump map using normal map
 	bumpMap = normalTexture.Sample(basicSampler, input.uv);

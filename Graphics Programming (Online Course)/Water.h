@@ -9,6 +9,7 @@ public:
 	~Water();
 
 	float GetHeight();
+	ID3D11ShaderResourceView* GetNormalTexture();
 	XMFLOAT4X4 GetReflectionMatrix();
 	Mesh* GetMesh();
 

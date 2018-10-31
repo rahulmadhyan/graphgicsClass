@@ -16,14 +16,17 @@ public:
 	Mesh(char* fileName, ID3D11Device* device);
 	~Mesh();
 
-	void CreateBuffers(Vertex* vertices, int numberOfVertices, UINT* indices, int numberOfIndices, ID3D11Device* device);
-	ID3D11Buffer* GetVertextBuffer() const;
-	ID3D11Buffer* GetIndexBuffer() const;
 	int GetIndexCount() const;
 
+	ID3D11Buffer* GetVertextBuffer() const;
+	ID3D11Buffer* GetIndexBuffer() const;
+
+	void CreateBuffers(Vertex* vertices, int numberOfVertices, UINT* indices, int numberOfIndices, ID3D11Device* device);
 private:
 	int indexCount;
 	ID3D11Buffer* vertexBuffer;
 	ID3D11Buffer* indexBuffer;
+
+	void CalculateTangents(Vertex* vertices, int numberOfVertices, UINT* indices, int numberOfIndices);
 };
 

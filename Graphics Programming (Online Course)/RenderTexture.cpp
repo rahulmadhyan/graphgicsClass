@@ -7,7 +7,11 @@ RenderTexture::RenderTexture()
 
 RenderTexture::~RenderTexture()
 {
-
+	if (renderTargetTexture) { renderTargetTexture->Release(); }
+	if (depthStencilView) { depthStencilView->Release(); }
+	if (depthStencilBuffer) { depthStencilBuffer->Release(); }
+	if (renderTargetView) { renderTargetView->Release(); }
+	if (shaderResourceView) { shaderResourceView->Release(); }
 }
 
 ID3D11ShaderResourceView* RenderTexture::GetShaderResourceView()

@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "Vertex.h"
 #include <fstream>
+#include <atlbase.h>
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -21,10 +22,6 @@ Game::Game(HINSTANCE hInstance)
 		720,			   // Height of the window's client area
 		true)			   // Show extra stats (fps) in title bar?
 {
-	// Initialize fields
-	vertexShader = 0;
-	pixelShader = 0;
-
 #if defined(DEBUG) || defined(_DEBUG)
 	// Do we want a console window?  Probably only in debug mode
 	CreateConsoleWindow(500, 120, 32, 120);
@@ -39,13 +36,13 @@ Game::Game(HINSTANCE hInstance)
 // --------------------------------------------------------
 Game::~Game()
 {
-	// Release any (and all!) DirectX objects
-	// we've made in the Game class
+	delete water;
+	delete waterEntity;
 
-	// Delete our simple shader objects, which
-	// will clean up their own internal DirectX stuff
-	delete vertexShader;
-	delete pixelShader;
+	delete reflectionTexture;
+	delete refractionTexture;
+
+	delete reflection;
 
 	delete gameTerrain;
 	delete terrainEntity;
@@ -54,14 +51,14 @@ Game::~Game()
 
 	delete frustum;
 
-	/*std::vector<GameEntity*>::iterator it;
-	for (it = entities.begin(); it < entities.end(); it++)
-	{
-		GameEntity* currentEntity = *it;
-		delete currentEntity;
-	}*/
+	/*CComPtr<ID3D11Debug> debug; 
+	HRESULT hr = device->QueryInterface(IID_PPV_ARGS(&debug));
 
-	sampler->Release();
+	if (debug)
+	{
+		debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+		debug = nullptr;
+	}*/
 }
 
 // --------------------------------------------------------
@@ -73,14 +70,8 @@ void Game::Init()
 	// Helper methods for loading shaders, creating some basic
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
-	LoadShaders();
 	CreateCamera();
 	CreateBasicGeometry();
-
-	// Tell the input assembler stage of the pipeline what kind of
-	// geometric primitives (points, lines or triangles) we want to draw.  
-	// Essentially: "What kind of shape should the GPU draw with our data?"
-	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//Initialize Light
 	dLight.AmbientColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -88,36 +79,8 @@ void Game::Init()
 	dLight.Direction = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
 	dLight1.AmbientColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	dLight1.DiffuseColor = XMFLOAT4(1.0f, 1.0f,	1.0f, 1.0f);
-	dLight1.Direction = XMFLOAT3(1.0f, -1.0f, 1.0f);
-}
-
-// --------------------------------------------------------
-// Loads shaders from compiled shader object (.cso) files using
-// my SimpleShader wrapper for DirectX shader manipulation.
-// - SimpleShader provides helpful methods for sending
-//   data to individual variables on the GPU
-// --------------------------------------------------------
-void Game::LoadShaders()
-{
-	vertexShader = new SimpleVertexShader(device, context);
-	if (!vertexShader->LoadShaderFile(L"Debug/VertexShader.cso"))
-		vertexShader->LoadShaderFile(L"VertexShader.cso");		
-
-	pixelShader = new SimplePixelShader(device, context);
-	if(!pixelShader->LoadShaderFile(L"Debug/PixelShader.cso"))	
-		pixelShader->LoadShaderFile(L"PixelShader.cso");
-
-	// You'll notice that the code above attempts to load each
-	// compiled shader file (.cso) from two different relative paths.
-
-	// This is because the "working directory" (where relative paths begin)
-	// will be different during the following two scenarios:
-	//  - Debugging in VS: The "Project Directory" (where your .cpp files are) 
-	//  - Run .exe directly: The "Output Directory" (where the .exe & .cso files are)
-
-	// Checking both paths is the easiest way to ensure both 
-	// scenarios work correctly, although others exist
+	dLight1.DiffuseColor = XMFLOAT4(1.0f, 1.0f,	0.75f, 1.0f);
+	dLight1.Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);
 }
 
 // --------------------------------------------------------
@@ -125,22 +88,9 @@ void Game::LoadShaders()
 // --------------------------------------------------------
 void Game::CreateBasicGeometry()
 {
-	D3D11_SAMPLER_DESC sampDesc = {};
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
-	sampDesc.MaxAnisotropy = 16;
-
-	// Now, create the sampler from the description
-	HRESULT ok2 = device->CreateSamplerState(&sampDesc, &sampler);
-
-	CreateWICTextureFromFile(device, L"Debug/Textures/grass1.jpg", 0, &srv1);
-
 	//gameTerrain = new Terrain("Debug/HeightMap/demo.png", device);
 	gameTerrain = new Terrain(256, 256, 3.0, 0.01, 7.0, 2.5, 4, 2018);
-	gameTerrain->Initialize(device, false, L"Debug/Textures/grass1.jpg", L"Debug/Textures/dirt1.jpg", L"Debug/Textures/rock1.jpg");
+	gameTerrain->Initialize(device, false, L"Debug/Textures/grass1.jpg", L"Debug/Textures/dirt1.jpg", L"Debug/Textures/rock1.jpg", L"Debug/Textures/TerrainNormal.dds");
 
 	terrainEntity = new GameEntity(gameTerrain->GetMesh(), NULL);
 
@@ -153,28 +103,22 @@ void Game::CreateBasicGeometry()
 	
 	frustum = new FrustumCulling(1000.0f);
 
-	refrationTexture = new RenderTexture();	
-	refrationTexture->Initialize(device, width, height, 1000.0f, 0.1f);
-
+	refractionTexture = new RenderTexture();	
+	refractionTexture->Initialize(device, width, height, 1000.0f, 0.1f);
+	
 	reflectionTexture = new RenderTexture();
 	reflectionTexture->Initialize(device, width, height, 1000.0f, 0.1f);
 
 	reflection = new Reflection();
 	reflection->Initialize(device);
 
-	water = new Water(5.0f, 75.0f, 0.03f, 100.0f, XMFLOAT2(0.01f, 0.02f), XMFLOAT4(0.0f, 0.0f, 0.1f, 1.0f));
+	water = new Water(5.0f, 75.0f, 0.1f, 200.0f, XMFLOAT2(0.1f, 0.2f), XMFLOAT4(0.0f, 0.8f, 1.0f, 1.0f));
 	water->Initialize(device, L"Debug/Textures/WaterNormal.dds");
 	waterEntity = new GameEntity(water->GetMesh(), NULL);
 	waterEntity->SetTranslation(0.0f, 5.0f, 30.0f);
 	waterEntity->SetRotation(0.0f, 0.0f, 0.0f);
 	waterEntity->SetScale(0.1, 0.1f, 0.1f);
 	waterEntity->SetWorldMatrix();
-
-	entity1 = new GameEntity(NULL, NULL);
-	entity1->SetTranslation(0.0f, 0.0f, 0.0f);
-	entity1->SetRotation(0.0f, 0.0f, 0.0f);
-	entity1->SetScale(0.0f, 0.0f, 0.0f);
-	entity1->SetWorldMatrix();
 }
 
 
@@ -199,15 +143,13 @@ void Game::RenderRefraction()
 {
 	XMFLOAT4 clipPlane = XMFLOAT4(0.0f, -1.0f, 0.0f, water->GetHeight() + 1.0f);
 	
-	refrationTexture->SetRenderTarget(context);
-	refrationTexture->ClearRenderTarget(context, 0.0f, 0.0f, 0.0f, 1.0f);
+	refractionTexture->SetRenderTarget(context);
+	refractionTexture->ClearRenderTarget(context, 0.0f, 0.0f, 0.0f, 1.0f);
 
 	gameTerrain->Render(context, false, terrainEntity->GetWorldMatrix(),
 		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1, frustum);
 	
-	reflection->Render(context, gameTerrain->GetMesh()->GetIndexCount(), terrainEntity->GetWorldMatrix(),
-		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), srv1, srv1, dLight1.DiffuseColor, dLight1.Direction,
-		2.0f, clipPlane);
+	reflection->Render(context, gameTerrain->GetMesh()->GetIndexCount(), terrainEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), gameTerrain->GetColorTexture1(), gameTerrain->GetColorTexture2(), gameTerrain->GetColorTexture3(), water->GetNormalTexture() , dLight1.DiffuseColor, dLight1.Direction, 2.0f, clipPlane);
 
 	context->OMSetRenderTargets(1, &backBufferRTV, depthStencilView);
 	context->RSSetViewports(1, &viewport);
@@ -226,12 +168,9 @@ void Game::RenderReflection()
 
 	skybox->Render(context, reflectionViewMatrix, mainCamera.GetProjectionMatrix());
 
-	gameTerrain->Render(context, false, terrainEntity->GetWorldMatrix(),
-		reflectionViewMatrix, mainCamera.GetProjectionMatrix(), dLight1, frustum);
+	gameTerrain->Render(context, false, terrainEntity->GetWorldMatrix(), reflectionViewMatrix, mainCamera.GetProjectionMatrix(), dLight1, frustum);
 
-	reflection->Render(context, gameTerrain->GetMesh()->GetIndexCount(), terrainEntity->GetWorldMatrix(),
-		reflectionViewMatrix, mainCamera.GetProjectionMatrix(), srv1, srv1, dLight1.DiffuseColor, dLight1.Direction,
-		2.0f, clipPlane);
+	reflection->Render(context, gameTerrain->GetMesh()->GetIndexCount(), terrainEntity->GetWorldMatrix(), reflectionViewMatrix, mainCamera.GetProjectionMatrix(), gameTerrain->GetColorTexture1(), gameTerrain->GetColorTexture2(), gameTerrain->GetColorTexture3(), water->GetNormalTexture(), dLight1.DiffuseColor, dLight1.Direction, 2.0f, clipPlane);
 
 	context->OMSetRenderTargets(1, &backBufferRTV, depthStencilView);
 	context->RSSetViewports(1, &viewport);
@@ -248,6 +187,7 @@ void Game::Update(float deltaTime, float totalTime)
 
 	mainCamera.Update(deltaTime, totalTime);
 	frustum->ConstructFrustum(mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
+	
 	water->Update();
 
 	RenderRefraction();
@@ -273,51 +213,14 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
-	// Send data to shader variables
-	//  - Do this ONCE PER OBJECT you're drawing
-	//  - This is actually a complex process of copying data to a local buffer
-	//    and then copying that entire buffer to the GPU.  
-	//  - The "SimpleShader" class handles all of that for you.
-
-	//std::vector<GameEntity*>::iterator it;
-	//for (it = entities.begin(); it < entities.end(); it++)
-	//{
-	//	GameEntity *currentEntity = *it;
-	//	
-	//	currentEntity->PrepareMaterial(mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight, dLight1);
-
-	//	UINT stride = sizeof(Vertex);
-	//	UINT offset = 0;
-
-	//	Mesh* currentEntityMesh = currentEntity->GetMesh();
-	//	ID3D11Buffer* mesh1VertexBuffer = currentEntityMesh->GetVertextBuffer();
-	//	context->IASetVertexBuffers(0, 1, &mesh1VertexBuffer, &stride, &offset);
-	//	context->IASetIndexBuffer(currentEntityMesh->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
-
-	//	// Finally do the actual drawing
-	//	//  - Do this ONCE PER OBJECT you intend to draw
-	//	//  - This will use all of the currently set DirectX "stuff" (shaders, buffers, etc)
-	//	//  - DrawIndexed() uses the currently set INDEX BUFFER to look up corresponding
-	//	//     vertices in the currently set VERTEX BUFFER
-	//	context->DrawIndexed(
-	//		currentEntityMesh->GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
-	//		0,     // Offset to the first index we want to use
-	//		0);    // Offset to add to each index when looking up vertices
-	//}
-
-	water->RenderReflection(mainCamera.GetPosition(), mainCamera.GetRotation());
-
 	skybox->Render(context, mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
 
-	gameTerrain->Render(context, true, terrainEntity->GetWorldMatrix(),
-		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1, frustum);
+	gameTerrain->Render(context, true, terrainEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1, frustum);
 	
-	water->Render(context, waterEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(),
-		mainCamera.GetProjectionMatrix(), water->GetReflectionMatrix(), refrationTexture->GetShaderResourceView(),
-		reflectionTexture->GetShaderResourceView(), mainCamera.GetPosition(), dLight1.Direction);
+	water->Render(context, waterEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), water->GetReflectionMatrix(), refractionTexture->GetShaderResourceView(), reflectionTexture->GetShaderResourceView(), mainCamera.GetPosition(), dLight1.Direction);
 
-	/*ID3D11ShaderResourceView* null[] = { nullptr, nullptr };
-	context->PSSetShaderResources(0, 2, null);*/
+	ID3D11ShaderResourceView *const pSRV[16] = { NULL };
+	context->PSSetShaderResources(0, 16, pSRV);
 
 	swapChain->Present(0, 0);
 }

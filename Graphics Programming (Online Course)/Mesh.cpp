@@ -9,6 +9,7 @@ Mesh::Mesh()
 Mesh::Mesh(Vertex* vertices, int numberOfVertices, UINT* indices, int numberOfIndices, ID3D11Device* device) :
 	indexCount(numberOfIndices)
 {
+	CalculateTangents(vertices, numberOfVertices, indices, numberOfIndices);
 	CreateBuffers(vertices, numberOfVertices, indices, numberOfIndices, device);
 }
 
@@ -25,8 +26,8 @@ Mesh::Mesh(char* fileName, ID3D11Device* device)
 	std::vector<XMFLOAT3> positions;     // Positions from the file
 	std::vector<XMFLOAT3> normals;       // Normals from the file
 	std::vector<XMFLOAT2> uvs;           // UVs from the file
-	std::vector<Vertex> verts;           // Verts we're assembling
-	std::vector<UINT> indices;           // Indices of these verts
+	std::vector<Vertex> vertices;           // vertices we're assembling
+	std::vector<UINT> indices;           // Indices of these vertices
 	unsigned int vertCounter = 0;        // Count of vertices/indices
 	char chars[100];                     // String for line reading
 
@@ -85,7 +86,7 @@ Mesh::Mesh(char* fileName, ID3D11Device* device)
 				&i[6], &i[7], &i[8],
 				&i[9], &i[10], &i[11]);
 
-			// - Create the verts by looking up
+			// - Create the vertices by looking up
 			//    corresponding data from vectors
 			// - OBJ File indices are 1-based, so
 			//    they need to be adusted
@@ -130,10 +131,10 @@ Mesh::Mesh(char* fileName, ID3D11Device* device)
 			v2.Normal.z *= -1.0f;
 			v3.Normal.z *= -1.0f;
 
-			// Add the verts to the vector (flipping the winding order)
-			verts.push_back(v1);
-			verts.push_back(v3);
-			verts.push_back(v2);
+			// Add the vertices to the vector (flipping the winding order)
+			vertices.push_back(v1);
+			vertices.push_back(v3);
+			vertices.push_back(v2);
 
 			// Add three more indices
 			indices.push_back(vertCounter); vertCounter += 1;
@@ -155,9 +156,9 @@ Mesh::Mesh(char* fileName, ID3D11Device* device)
 				v4.Normal.z *= -1.0f;
 
 				// Add a whole triangle (flipping the winding order)
-				verts.push_back(v1);
-				verts.push_back(v4);
-				verts.push_back(v3);
+				vertices.push_back(v1);
+				vertices.push_back(v4);
+				vertices.push_back(v3);
 
 				// Add three more indices
 				indices.push_back(vertCounter); vertCounter += 1;
@@ -170,8 +171,8 @@ Mesh::Mesh(char* fileName, ID3D11Device* device)
 	// Close the file and create the actual buffers
 	obj.close();
 
-	// - At this point, "verts" is a vector of Vertex structs, and can be used
-	//    directly to create a vertex buffer:  &verts[0] is the address of the first vert
+	// - At this point, "vertices" is a vector of Vertex structs, and can be used
+	//    directly to create a vertex buffer:  &vertices[0] is the address of the first vert
 	//
 	// - The vector "indices" is similar. It's a vector of unsigned ints and
 	//    can be used directly for the index buffer: &indices[0] is the address of the first int
@@ -181,7 +182,7 @@ Mesh::Mesh(char* fileName, ID3D11Device* device)
 
 	indexCount = vertCounter;
 
-	CreateBuffers(&verts[0], vertCounter, &indices[0], vertCounter, device);
+	CreateBuffers(&vertices[0], vertCounter, &indices[0], vertCounter, device);
 }
 
 Mesh::~Mesh()
@@ -196,8 +197,25 @@ Mesh::~Mesh()
 	}
 }
 
+int Mesh::GetIndexCount() const
+{
+	return indexCount;
+}
+
+ID3D11Buffer* Mesh::GetVertextBuffer() const
+{
+	return vertexBuffer;
+}
+
+ID3D11Buffer* Mesh::GetIndexBuffer() const
+{
+	return indexBuffer;
+}
+
 void Mesh::CreateBuffers(Vertex* vertices, int numberOfVertices, UINT* indices, int numberOfIndices, ID3D11Device* device)
 {
+	
+
 	// Create the VERTEX BUFFER description -----------------------------------
 	// - The description is created on the stack because we only need
 	//    it to create the buffer.  The description is then useless.
@@ -239,17 +257,75 @@ void Mesh::CreateBuffers(Vertex* vertices, int numberOfVertices, UINT* indices, 
 	device->CreateBuffer(&ibd, &initialIndexData, &indexBuffer);
 }
 
-ID3D11Buffer* Mesh::GetVertextBuffer() const
+void Mesh::CalculateTangents(Vertex* vertices, int numberOfVertices, UINT* indices, int numberOfIndices)
 {
-	return vertexBuffer;
+	// Reset tangents
+	for (int i = 0; i < numberOfVertices; i++)
+	{
+		vertices[i].Tangent = XMFLOAT3(0, 0, 0);
+	}
+
+	// Calculate tangents one whole triangle at a time
+	for (int i = 0; i < numberOfVertices;)
+	{
+		// Grab indices and vertices of first triangle
+		unsigned int i1 = indices[i++];
+		unsigned int i2 = indices[i++];
+		unsigned int i3 = indices[i++];
+		Vertex* v1 = &vertices[i1];
+		Vertex* v2 = &vertices[i2];
+		Vertex* v3 = &vertices[i3];
+
+		// Calculate vectors relative to triangle positions
+		float x1 = v2->Position.x - v1->Position.x;
+		float y1 = v2->Position.y - v1->Position.y;
+		float z1 = v2->Position.z - v1->Position.z;
+
+		float x2 = v3->Position.x - v1->Position.x;
+		float y2 = v3->Position.y - v1->Position.y;
+		float z2 = v3->Position.z - v1->Position.z;
+
+		// Do the same for vectors relative to triangle uv's
+		float s1 = v2->UV.x - v1->UV.x;
+		float t1 = v2->UV.y - v1->UV.y;
+
+		float s2 = v3->UV.x - v1->UV.x;
+		float t2 = v3->UV.y - v1->UV.y;
+
+		// Create vectors for tangent calculation
+		float r = 1.0f / (s1 * t2 - s2 * t1);
+
+		float tx = (t2 * x1 - t1 * x2) * r;
+		float ty = (t2 * y1 - t1 * y2) * r;
+		float tz = (t2 * z1 - t1 * z2) * r;
+
+		// Adjust tangents of each vert of the triangle
+		v1->Tangent.x += tx;
+		v1->Tangent.y += ty;
+		v1->Tangent.z += tz;
+
+		v2->Tangent.x += tx;
+		v2->Tangent.y += ty;
+		v2->Tangent.z += tz;
+
+		v3->Tangent.x += tx;
+		v3->Tangent.y += ty;
+		v3->Tangent.z += tz;
+	}
+
+	// Ensure all of the tangents are orthogonal to the normals
+	for (int i = 0; i < numberOfVertices; i++)
+	{
+		// Grab the two vectors
+		XMVECTOR normal = XMLoadFloat3(&vertices[i].Normal);
+		XMVECTOR tangent = XMLoadFloat3(&vertices[i].Tangent);
+
+		// Use Gram-Schmidt orthogonalize
+		tangent = XMVector3Normalize(
+			tangent - normal * XMVector3Dot(normal, tangent));
+
+		// Store the tangent
+		XMStoreFloat3(&vertices[i].Tangent, tangent);
+	}
 }
 
-ID3D11Buffer* Mesh::GetIndexBuffer() const
-{
-	return indexBuffer;
-}
-
-int Mesh::GetIndexCount() const
-{
-	return indexCount;
-}
