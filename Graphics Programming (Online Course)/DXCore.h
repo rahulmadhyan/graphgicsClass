@@ -6,7 +6,6 @@
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
-#include <dinput.h>
 
 // We can include the correct library files here
 // instead of in Visual Studio settings if we want
@@ -49,10 +48,10 @@ public:
 
 	// Convenience methods for handling mouse input, since we
 	// can easily grab mouse input from OS-level messages
-	virtual void OnMouseDown (WPARAM buttonState, int x, int y) { }
-	virtual void OnMouseUp	 (WPARAM buttonState, int x, int y) { }
-	virtual void OnMouseMove (WPARAM buttonState, int x, int y) { }
-	virtual void OnMouseWheel(float wheelDelta,   int x, int y) { }
+	//virtual void OnMouseDown (WPARAM buttonState, int x, int y) { }
+	//virtual void OnMouseUp	 (WPARAM buttonState, int x, int y) { }
+	//virtual void OnMouseMove (WPARAM buttonState, int x, int y) { }
+	//virtual void OnMouseWheel(float wheelDelta,   int x, int y) { }
 	
 protected:
 	HINSTANCE	hInstance;		// The handle to the application
@@ -75,6 +74,11 @@ protected:
 
 	D3D11_VIEWPORT viewport;
 
+	// ImGui
+	bool show_demo_window = true;
+	bool show_another_window = false;
+	ImVec4 clear_color = ImVec4(0.0f, 0.55f, 0.60f, 1.00f);
+
 	// Helper function for allocating a console window
 	void CreateConsoleWindow(int bufferLines, int bufferColumns, int windowLines, int windowColumns);
 
@@ -90,11 +94,6 @@ private:
 	// FPS calculation
 	int fpsFrameCount;
 	float fpsTimeElapsed;
-	
-	// ImGui
-	bool show_demo_window = true;
-	bool show_another_window = false;
-	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	void UpdateTimer();			// Updates the timer for this frame
 	void UpdateTitleBarStats();	// Puts debug info in the title bar

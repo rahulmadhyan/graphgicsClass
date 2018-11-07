@@ -225,7 +225,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	swapChain->Present(0, 0);
 }
 
-
+/*
 #pragma region Mouse Input
 
 // --------------------------------------------------------
@@ -293,3 +293,4 @@ void Game::OnMouseWheel(float wheelDelta, int x, int y)
 	// Add any custom code here...
 }
 #pragma endregion
+*/
