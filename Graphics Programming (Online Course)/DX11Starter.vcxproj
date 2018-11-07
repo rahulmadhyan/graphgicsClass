@@ -77,7 +77,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(SolutionDir)/packages/IMGUI;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)/IMGUI;</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
@@ -128,17 +128,27 @@
     <ClCompile Include="FrustumCulling.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameEntity.cpp" />
+    <ClCompile Include="IMGUI\imgui.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="IMGUI\imgui_demo.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="IMGUI\imgui_draw.cpp" />
+    <ClCompile Include="IMGUI\imgui_impl_dx11.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="IMGUI\imgui_impl_win32.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="IMGUI\imgui_widgets.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Main.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="packages\IMGUI\imgui.cpp" />
-    <ClCompile Include="packages\IMGUI\imgui_demo.cpp" />
-    <ClCompile Include="packages\IMGUI\imgui_draw.cpp" />
-    <ClCompile Include="packages\IMGUI\imgui_impl_dx11.cpp" />
-    <ClCompile Include="packages\IMGUI\imgui_impl_win32.cpp" />
-    <ClCompile Include="packages\IMGUI\imgui_widgets.cpp" />
     <ClCompile Include="PerlinNoise.cpp" />
     <ClCompile Include="Reflection.cpp" />
     <ClCompile Include="RenderTexture.cpp" />
@@ -154,17 +164,17 @@
     <ClInclude Include="FrustumCulling.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameEntity.h" />
+    <ClInclude Include="IMGUI\imconfig.h" />
+    <ClInclude Include="IMGUI\imgui.h" />
+    <ClInclude Include="IMGUI\imgui_impl_dx11.h" />
+    <ClInclude Include="IMGUI\imgui_impl_win32.h" />
+    <ClInclude Include="IMGUI\imgui_internal.h" />
+    <ClInclude Include="IMGUI\imstb_rectpack.h" />
+    <ClInclude Include="IMGUI\imstb_textedit.h" />
+    <ClInclude Include="IMGUI\imstb_truetype.h" />
     <ClInclude Include="Lights.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="packages\IMGUI\imconfig.h" />
-    <ClInclude Include="packages\IMGUI\imgui.h" />
-    <ClInclude Include="packages\IMGUI\imgui_impl_dx11.h" />
-    <ClInclude Include="packages\IMGUI\imgui_impl_win32.h" />
-    <ClInclude Include="packages\IMGUI\imgui_internal.h" />
-    <ClInclude Include="packages\IMGUI\imstb_rectpack.h" />
-    <ClInclude Include="packages\IMGUI\imstb_textedit.h" />
-    <ClInclude Include="packages\IMGUI\imstb_truetype.h" />
     <ClInclude Include="PerlinNoise.h" />
     <ClInclude Include="Reflection.h" />
     <ClInclude Include="RenderTexture.h" />

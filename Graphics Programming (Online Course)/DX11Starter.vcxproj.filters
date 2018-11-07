@@ -69,22 +69,22 @@
     <ClCompile Include="Water.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="packages\IMGUI\imgui.cpp">
+    <ClCompile Include="IMGUI\imgui.cpp">
       <Filter>IMGUI</Filter>
     </ClCompile>
-    <ClCompile Include="packages\IMGUI\imgui_demo.cpp">
+    <ClCompile Include="IMGUI\imgui_demo.cpp">
       <Filter>IMGUI</Filter>
     </ClCompile>
-    <ClCompile Include="packages\IMGUI\imgui_draw.cpp">
+    <ClCompile Include="IMGUI\imgui_draw.cpp">
       <Filter>IMGUI</Filter>
     </ClCompile>
-    <ClCompile Include="packages\IMGUI\imgui_widgets.cpp">
+    <ClCompile Include="IMGUI\imgui_impl_dx11.cpp">
       <Filter>IMGUI</Filter>
     </ClCompile>
-    <ClCompile Include="packages\IMGUI\imgui_impl_dx11.cpp">
+    <ClCompile Include="IMGUI\imgui_impl_win32.cpp">
       <Filter>IMGUI</Filter>
     </ClCompile>
-    <ClCompile Include="packages\IMGUI\imgui_impl_win32.cpp">
+    <ClCompile Include="IMGUI\imgui_widgets.cpp">
       <Filter>IMGUI</Filter>
     </ClCompile>
   </ItemGroup>
@@ -140,32 +140,32 @@
     <ClInclude Include="Water.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="packages\IMGUI\imconfig.h">
-      <Filter>IMGUI</Filter>
-    </ClInclude>
-    <ClInclude Include="packages\IMGUI\imgui.h">
-      <Filter>IMGUI</Filter>
-    </ClInclude>
-    <ClInclude Include="packages\IMGUI\imgui_internal.h">
-      <Filter>IMGUI</Filter>
-    </ClInclude>
-    <ClInclude Include="packages\IMGUI\imstb_rectpack.h">
-      <Filter>IMGUI</Filter>
-    </ClInclude>
-    <ClInclude Include="packages\IMGUI\imstb_textedit.h">
-      <Filter>IMGUI</Filter>
-    </ClInclude>
-    <ClInclude Include="packages\IMGUI\imstb_truetype.h">
-      <Filter>IMGUI</Filter>
-    </ClInclude>
-    <ClInclude Include="packages\IMGUI\imgui_impl_dx11.h">
-      <Filter>IMGUI</Filter>
-    </ClInclude>
-    <ClInclude Include="packages\IMGUI\imgui_impl_win32.h">
-      <Filter>IMGUI</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IMGUI\imconfig.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="IMGUI\imgui.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="IMGUI\imgui_impl_dx11.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="IMGUI\imgui_impl_win32.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="IMGUI\imgui_internal.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="IMGUI\imstb_rectpack.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="IMGUI\imstb_textedit.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="IMGUI\imstb_truetype.h">
+      <Filter>IMGUI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
