@@ -1,9 +1,5 @@
 #pragma once
-
-#include <d3d11.h>
-#include <DirectXMath.h>
-#include "DXCore.h"
-#include "SimpleShader.h"
+#include "stdafx.h"
 #include "Vertex.h"
 
 using namespace DirectX;

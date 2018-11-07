@@ -1,11 +1,7 @@
 #pragma once
-
+#include "stdafx.h"
 #include <Windows.h>
-#include <d3d11.h>
 #include <string>
-#include "imgui.h"
-#include "imgui_impl_win32.h"
-#include "imgui_impl_dx11.h"
 
 // We can include the correct library files here
 // instead of in Visual Studio settings if we want

@@ -1,9 +1,8 @@
 #pragma once
-
+#include "stdafx.h"
 #include "Mesh.h"
 #include "Material.h"
 #include "Lights.h"
-#include <DirectXMath.h>
 
 using namespace DirectX;
 

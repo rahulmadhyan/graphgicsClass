@@ -1,7 +1,6 @@
 #pragma once
-#include <DirectXMath.h>
+#include "stdafx.h"
 #include <DDSTextureLoader.h>
-#include "DXCore.h"
 #include "Mesh.h"
 #include "Vertex.h"
 

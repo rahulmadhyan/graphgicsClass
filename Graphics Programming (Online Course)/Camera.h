@@ -1,7 +1,5 @@
 #pragma once
-
-#include "DXCore.h"
-#include <DirectXMath.h>
+#include "stdafx.h"
 #include <Windows.h>
 
 class Camera

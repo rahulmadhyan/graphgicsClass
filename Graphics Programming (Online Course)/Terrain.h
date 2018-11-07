@@ -1,11 +1,9 @@
 #pragma once
-
+#include "stdafx.h"
 #include <wincodec.h>  
 #include <vector>
-#include <DirectXMath.h>
 #include <WICTextureLoader.h>
 #include <DDSTextureLoader.h>
-#include "DXCore.h"
 #include "Mesh.h"
 #include "Lights.h"
 #include "PerlinNoise.h"

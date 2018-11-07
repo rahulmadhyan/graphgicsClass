@@ -1,6 +1,5 @@
 #pragma once
-#pragma once
-
+#include "stdafx.h"
 #include <cmath>
 
 class PerlinNoise

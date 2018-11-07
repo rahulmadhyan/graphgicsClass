@@ -164,6 +164,9 @@
     <ClInclude Include="packages\IMGUI\imgui_impl_win32.h">
       <Filter>IMGUI</Filter>
     </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

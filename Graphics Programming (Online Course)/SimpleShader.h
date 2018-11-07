@@ -1,14 +1,13 @@
 #pragma once
-#pragma comment(lib, "dxguid.lib")
-#pragma comment(lib, "d3dcompiler.lib")
-
-#include <d3d11.h>
+#include "stdafx.h"
 #include <d3dcompiler.h>
-#include <DirectXMath.h>
 
 #include <unordered_map>
 #include <vector>
 #include <string>
+
+#pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "d3dcompiler.lib")
 
 // --------------------------------------------------------
 // Used by simple shaders to store information about
