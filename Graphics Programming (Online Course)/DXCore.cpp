@@ -2,6 +2,7 @@
 
 #include <WindowsX.h>
 #include <sstream>
+#include <fstream>
 
 // Define the static instance variable so our OS-level 
 // message handling function below can talk to our object
@@ -383,7 +384,6 @@ HRESULT DXCore::Run()
 	return msg.wParam;
 }
 
-
 // --------------------------------------------------------
 // Sends an OS-level Quit message to our process, which
 // will be handled by our message processing function
@@ -392,7 +392,6 @@ void DXCore::Quit()
 {
 	PostQuitMessage(0);
 }
-
 
 // --------------------------------------------------------
 // Uses high resolution time stamps to get very accurate
@@ -416,7 +415,6 @@ void DXCore::UpdateTimer()
 	// Save current time for next frame
 	previousTime = currentTime;
 }
-
 
 // --------------------------------------------------------
 // Updates the window's title bar with several stats once
@@ -503,10 +501,6 @@ void DXCore::CreateConsoleWindow(int bufferLines, int bufferColumns, int windowL
 	EnableMenuItem(hmenu, SC_CLOSE, MF_GRAYED);
 }
 
-
-
-
-
 // --------------------------------------------------------
 // Handles messages that are sent to our window by the
 // operating system.  Ignoring these messages would cause
@@ -574,4 +568,3 @@ LRESULT DXCore::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 	// Let Windows handle any messages we're not touching
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
-

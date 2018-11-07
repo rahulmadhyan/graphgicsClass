@@ -67,9 +67,6 @@ Game::~Game()
 // --------------------------------------------------------
 void Game::Init()
 {
-	// Helper methods for loading shaders, creating some basic
-	// geometry to draw and some simple camera matrices.
-	//  - You'll be expanding and/or replacing these later
 	CreateCamera();
 	CreateBasicGeometry();
 
@@ -90,7 +87,7 @@ void Game::CreateBasicGeometry()
 {
 	//gameTerrain = new Terrain("Debug/HeightMap/demo.png", device);
 	gameTerrain = new Terrain(256, 256, 3.0, 0.01, 7.0, 2.5, 4, 2018);
-	gameTerrain->Initialize(device, false, L"Debug/Textures/grass1.jpg", L"Debug/Textures/dirt1.jpg", L"Debug/Textures/rock1.jpg", L"Debug/Textures/TerrainNormal.dds");
+	gameTerrain->Initialize(device, context, false, L"Debug/Textures/grass1.jpg", L"Debug/Textures/dirt1.jpg", L"Debug/Textures/rock1.jpg", L"Debug/Textures/TerrainNormal.dds");
 
 	terrainEntity = new GameEntity(gameTerrain->GetMesh(), NULL);
 

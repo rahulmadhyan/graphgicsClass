@@ -127,7 +127,7 @@ Mesh* Terrain::GetMesh()
 	return terrainMesh; 
 }
 
-void Terrain::Initialize(ID3D11Device* device, bool _frustumCulling, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename)
+void Terrain::Initialize(ID3D11Device* device, ID3D11DeviceContext* context, bool _frustumCulling, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename)
 {
 	terrainCellCount = 0;
 
@@ -151,7 +151,7 @@ void Terrain::Initialize(ID3D11Device* device, bool _frustumCulling, WCHAR* gras
 
 	CalculateTextureCoordinates();
 
-	LoadTextures(device, grassTextureFilename, slopeTextureFilename, rockTextureFilename, normalTextureFilename);
+	LoadTextures(device, context, grassTextureFilename, slopeTextureFilename, rockTextureFilename, normalTextureFilename);
 
 	InitializeBuffers(device);
 
@@ -614,12 +614,12 @@ void Terrain::CalculateTextureCoordinates()
 	}
 }
 
-void Terrain::LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename)
+void Terrain::LoadTextures(ID3D11Device* device, ID3D11DeviceContext* context, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename)
 {
-	CreateWICTextureFromFile(device, grassTextureFilename, 0, &grassTexture);
-	CreateWICTextureFromFile(device, slopeTextureFilename, 0, &slopeTexture);
-	CreateWICTextureFromFile(device, rockTextureFilename, 0, &rockTexture);
-	CreateDDSTextureFromFile(device, normalTextureFilename, 0, &normalTexture);
+	CreateWICTextureFromFile(device, context, grassTextureFilename, 0, &grassTexture);
+	CreateWICTextureFromFile(device, context, slopeTextureFilename, 0, &slopeTexture);
+	CreateWICTextureFromFile(device, context, rockTextureFilename, 0, &rockTexture);
+	CreateDDSTextureFromFile(device, context, normalTextureFilename, 0, &normalTexture);
 }
 
 void Terrain::InitializeBuffers(ID3D11Device* device)
@@ -786,7 +786,6 @@ void Terrain::InitializeShaders(ID3D11Device* device)
 	// Compile the vertex shader code.
 	result = D3DCompileFromFile(L"Debug/TerrainVertexShader.hlsl", NULL, NULL, "main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
 		&vertexShaderBuffer, 0);
-
 
 	// Compile the pixel shader code.
 	result = D3DCompileFromFile(L"Debug/TerrainPixelShader.hlsl", NULL, NULL, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,

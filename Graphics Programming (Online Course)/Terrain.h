@@ -40,7 +40,7 @@ public:
 	
 	Mesh* GetMesh();
 	
-	void Initialize(ID3D11Device* device, bool _frustumCulling, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename);
+	void Initialize(ID3D11Device* device, ID3D11DeviceContext* context, bool _frustumCulling, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename);
 	void Render(ID3D11DeviceContext* context, bool terrainShader, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum);
 	
 private:
@@ -96,7 +96,7 @@ private:
 	
 	void CalulateNormals();
 	void CalculateTextureCoordinates();
-	void LoadTextures(ID3D11Device* device, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename);
+	void LoadTextures(ID3D11Device* device, ID3D11DeviceContext* context, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename);
 	void InitializeBuffers(ID3D11Device* device);
 	void InitializeTerraincCells(ID3D11Device* device, Vertex* terrainVertices);
 

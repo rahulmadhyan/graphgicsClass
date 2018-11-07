@@ -146,8 +146,8 @@ void Camera::SetProjectionMatrix(unsigned int newWidth, unsigned int newHeight)
 
 void Camera::ResetCamera()
 {
-	XMVECTOR pos = XMVectorSet(-2, 8, 18, 0);
+	XMVECTOR pos = XMVectorSet(-35, 35, -35, 0);
 	XMStoreFloat3(&position, pos);
-	xRotation = 0.0f;
-	yRotation = 0.0f;
+	xRotation = 0.3f;
+	yRotation = 0.48f;
 }
