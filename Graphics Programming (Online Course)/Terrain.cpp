@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Terrain.h"
 
 Terrain::Terrain(char *fileName, ID3D11Device* device)

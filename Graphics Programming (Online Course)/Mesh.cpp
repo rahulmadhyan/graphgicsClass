@@ -1,5 +1,7 @@
+#include "stdafx.h"
 #include "Mesh.h"
 #include <fstream>
+#include <d3dcompiler.h>
 
 Mesh::Mesh()
 {

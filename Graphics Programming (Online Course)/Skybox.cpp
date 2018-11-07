@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Skybox.h"
 
 Skybox::Skybox(char* filename, WCHAR* skyboxTextureFilename, ID3D11Device* device)

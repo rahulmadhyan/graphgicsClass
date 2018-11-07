@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "FrustumCulling.h"
 
 FrustumCulling::FrustumCulling(float screenDepth) : screenDepth(screenDepth)

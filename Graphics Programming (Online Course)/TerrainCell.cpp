@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "TerrainCell.h"
 
 TerrainCell::TerrainCell()

@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Water.h"
 
 Water::Water(float waterHeight, float waterRadius, float refractReflectScale, float specularShine, XMFLOAT2 normalMapTiling, XMFLOAT4 refractionTint)
