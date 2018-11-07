@@ -784,11 +784,11 @@ void Terrain::InitializeShaders(ID3D11Device* device)
 	pixelShaderBuffer = 0;
 
 	// Compile the vertex shader code.
-	result = D3DCompileFromFile(L"Debug/TerrainVertexShader.hlsl", NULL, NULL, "main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
+	result = D3DCompileFromFile(L"Resources/Shaders/TerrainVertexShader.hlsl", NULL, NULL, "main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
 		&vertexShaderBuffer, 0);
 
 	// Compile the pixel shader code.
-	result = D3DCompileFromFile(L"Debug/TerrainPixelShader.hlsl", NULL, NULL, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
+	result = D3DCompileFromFile(L"Resources/Shaders/TerrainPixelShader.hlsl", NULL, NULL, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
 		&pixelShaderBuffer, 0);
 
 	// Create the vertex shader from the buffer.

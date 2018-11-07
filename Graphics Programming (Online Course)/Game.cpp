@@ -85,9 +85,9 @@ void Game::Init()
 // --------------------------------------------------------
 void Game::CreateBasicGeometry()
 {
-	//gameTerrain = new Terrain("Debug/HeightMap/demo.png", device);
+	//gameTerrain = new Terrain("Resources/HeightMaps/demo.png", device);
 	gameTerrain = new Terrain(256, 256, 3.0, 0.01, 7.0, 2.5, 4, 2018);
-	gameTerrain->Initialize(device, context, false, L"Debug/Textures/grass1.jpg", L"Debug/Textures/dirt1.jpg", L"Debug/Textures/rock1.jpg", L"Debug/Textures/TerrainNormal.dds");
+	gameTerrain->Initialize(device, context, false, L"Resources/Textures/grass1.jpg", L"Resources/Textures/dirt1.jpg", L"Resources/Textures/rock1.jpg", L"Resources/Textures/TerrainNormal.dds");
 
 	terrainEntity = new GameEntity(gameTerrain->GetMesh(), NULL);
 
@@ -96,7 +96,7 @@ void Game::CreateBasicGeometry()
 	terrainEntity->SetScale(0.1, 0.1f, 0.1f);
 	terrainEntity->SetWorldMatrix();
 
-	skybox = new Skybox("Debug/OBJ\ Files/cube.obj", L"Debug/Textures/SunnyCubeMap.dds", device);
+	skybox = new Skybox("Resources/Models/cube.obj", L"Resources/Textures/SunnyCubeMap.dds", device);
 	
 	frustum = new FrustumCulling(1000.0f);
 
@@ -110,7 +110,7 @@ void Game::CreateBasicGeometry()
 	reflection->Initialize(device);
 
 	water = new Water(5.0f, 75.0f, 0.1f, 200.0f, XMFLOAT2(0.1f, 0.2f), XMFLOAT4(0.0f, 0.8f, 1.0f, 1.0f));
-	water->Initialize(device, L"Debug/Textures/WaterNormal.dds");
+	water->Initialize(device, L"Resources/Textures/WaterNormal.dds");
 	waterEntity = new GameEntity(water->GetMesh(), NULL);
 	waterEntity->SetTranslation(0.0f, 5.0f, 30.0f);
 	waterEntity->SetRotation(0.0f, 0.0f, 0.0f);

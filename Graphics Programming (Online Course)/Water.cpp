@@ -229,8 +229,8 @@ void Water::InitializeShaders(ID3D11Device* device)
 	D3D11_BUFFER_DESC cameraNormalBufferDescription;
 	D3D11_BUFFER_DESC waterBuffferDescription;
 
-	D3DCompileFromFile(L"Debug/WaterVertexShader.hlsl", NULL, NULL, "main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &vertexShaderBuffer, 0);
-	D3DCompileFromFile(L"Debug/WaterPixelShader.hlsl", NULL, NULL, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pixelShaderBuffer, 0);
+	D3DCompileFromFile(L"Resources/Shaders/WaterVertexShader.hlsl", NULL, NULL, "main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &vertexShaderBuffer, 0);
+	D3DCompileFromFile(L"Resources/Shaders/WaterPixelShader.hlsl", NULL, NULL, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pixelShaderBuffer, 0);
 
 	device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &vertexShader);
 	device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &pixelShader);

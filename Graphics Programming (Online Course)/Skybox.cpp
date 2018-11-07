@@ -26,11 +26,11 @@ Skybox::Skybox(char* filename, WCHAR* skyboxTextureFilename, ID3D11Device* devic
 	CreateDDSTextureFromFile(device, skyboxTextureFilename, 0, &skyboxTexture);
 
 	// Compile the vertex shader code.
-	result = D3DCompileFromFile(L"SkyVertexShader.hlsl", NULL, NULL, "main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
+	result = D3DCompileFromFile(L"Resources/Shaders/SkyVertexShader.hlsl", NULL, NULL, "main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
 		&vertexShaderBuffer, 0);
 
 	// Compile the pixel shader code.
-	result = D3DCompileFromFile(L"SkyPixelShader.hlsl", NULL, NULL, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
+	result = D3DCompileFromFile(L"Resources/Shaders/SkyPixelShader.hlsl", NULL, NULL, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
 		&pixelShaderBuffer, 0);
 
 	// Create the vertex shader from the buffer.
