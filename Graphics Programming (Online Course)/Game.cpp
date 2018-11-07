@@ -219,6 +219,9 @@ void Game::Draw(float deltaTime, float totalTime)
 	ID3D11ShaderResourceView *const pSRV[16] = { NULL };
 	context->PSSetShaderResources(0, 16, pSRV);
 
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
 	swapChain->Present(0, 0);
 }
 

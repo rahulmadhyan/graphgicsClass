@@ -69,6 +69,10 @@ DXCore::DXCore(
 // --------------------------------------------------------
 DXCore::~DXCore()
 {
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+
 	// Release all DirectX resources
 	if (depthStencilView) { depthStencilView->Release(); }
 	if (backBufferRTV) { backBufferRTV->Release();}
@@ -150,6 +154,16 @@ HRESULT DXCore::InitWindow()
 	// The window exists but is not visible yet
 	// We need to tell Windows to show it, and how to show it
 	ShowWindow(hWnd, SW_SHOW);
+
+	//IMGUI
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	(void)io;
+
+	ImGui_ImplWin32_Init(hWnd);
+	
+	ImGui::StyleColorsDark();
 
 	// Return an "everything is ok" HRESULT value
 	return S_OK;
@@ -265,6 +279,8 @@ HRESULT DXCore::InitDirectX()
 	viewport.MaxDepth	= 1.0f;
 	context->RSSetViewports(1, &viewport);
 
+	ImGui_ImplDX11_Init(device, context);
+
 	// Return the "everything is ok" HRESULT value
 	return S_OK;
 }
@@ -368,6 +384,46 @@ HRESULT DXCore::Run()
 		}
 		else
 		{
+			ImGui_ImplDX11_NewFrame();
+			ImGui_ImplWin32_NewFrame();
+			ImGui::NewFrame();
+
+			if (show_demo_window)
+				ImGui::ShowDemoWindow(&show_demo_window);
+
+			// sample window
+			{
+				static float f = 0.0f;
+				static int counter = 0;
+
+				ImGui::Begin("Hello!");
+
+				ImGui::Text("Text");
+				ImGui::Checkbox("Demo Window", &show_demo_window);
+				ImGui::Checkbox("Another window", &show_another_window);
+
+				ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+				ImGui::ColorEdit3("Clear color", (float*)&clear_color);
+
+				if (ImGui::Button("Button"))
+					counter++;
+
+				ImGui::SameLine();
+				ImGui::Text("Counter = %d", counter);
+
+				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+				ImGui::End();
+			}
+
+			if (show_another_window)
+			{
+				ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+				ImGui::Text("Hello from another window!");
+				if (ImGui::Button("Close Me"))
+					show_another_window = false;
+				ImGui::End();
+			}
+
 			// Update timer and title bar (if necessary)
 			UpdateTimer();
 			if(titleBarStats)
@@ -501,6 +557,7 @@ void DXCore::CreateConsoleWindow(int bufferLines, int bufferColumns, int windowL
 	EnableMenuItem(hmenu, SC_CLOSE, MF_GRAYED);
 }
 
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 // --------------------------------------------------------
 // Handles messages that are sent to our window by the
 // operating system.  Ignoring these messages would cause
@@ -509,6 +566,9 @@ void DXCore::CreateConsoleWindow(int bufferLines, int bufferColumns, int windowL
 // --------------------------------------------------------
 LRESULT DXCore::ProcessMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
+		return true;
+	
 	// Check the incoming message and handle any we care about
 	switch (uMsg)
 	{

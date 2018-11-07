@@ -16,6 +16,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{5f37ec8c-c624-4f3d-8d2e-1571a1df475b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="IMGUI">
+      <UniqueIdentifier>{74027f44-bcbd-42f1-87b7-852ed41de56b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -65,6 +68,24 @@
     </ClCompile>
     <ClCompile Include="Water.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\IMGUI\imgui.cpp">
+      <Filter>IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\IMGUI\imgui_demo.cpp">
+      <Filter>IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\IMGUI\imgui_draw.cpp">
+      <Filter>IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\IMGUI\imgui_widgets.cpp">
+      <Filter>IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\IMGUI\imgui_impl_dx11.cpp">
+      <Filter>IMGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\IMGUI\imgui_impl_win32.cpp">
+      <Filter>IMGUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -118,6 +139,30 @@
     </ClInclude>
     <ClInclude Include="Water.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\IMGUI\imconfig.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\IMGUI\imgui.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\IMGUI\imgui_internal.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\IMGUI\imstb_rectpack.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\IMGUI\imstb_textedit.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\IMGUI\imstb_truetype.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\IMGUI\imgui_impl_dx11.h">
+      <Filter>IMGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\IMGUI\imgui_impl_win32.h">
+      <Filter>IMGUI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

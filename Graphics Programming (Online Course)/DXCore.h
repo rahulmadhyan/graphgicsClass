@@ -3,6 +3,10 @@
 #include <Windows.h>
 #include <d3d11.h>
 #include <string>
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
+#include <dinput.h>
 
 // We can include the correct library files here
 // instead of in Visual Studio settings if we want
@@ -87,6 +91,11 @@ private:
 	int fpsFrameCount;
 	float fpsTimeElapsed;
 	
+	// ImGui
+	bool show_demo_window = true;
+	bool show_another_window = false;
+	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
 	void UpdateTimer();			// Updates the timer for this frame
 	void UpdateTitleBarStats();	// Puts debug info in the title bar
 };
