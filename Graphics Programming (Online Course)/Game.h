@@ -12,6 +12,7 @@
 #include "RenderTexture.h"
 #include "Reflection.h"
 #include "Water.h"
+#include "GUI.h"
 
 class Game 
 	: public DXCore

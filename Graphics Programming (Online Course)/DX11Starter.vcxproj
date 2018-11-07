@@ -130,6 +130,7 @@
     <ClCompile Include="FrustumCulling.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameEntity.cpp" />
+    <ClCompile Include="GUI.cpp" />
     <ClCompile Include="IMGUI\imgui.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -171,6 +172,7 @@
     <ClInclude Include="FrustumCulling.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameEntity.h" />
+    <ClInclude Include="GUI.h" />
     <ClInclude Include="IMGUI\imconfig.h" />
     <ClInclude Include="IMGUI\imgui.h" />
     <ClInclude Include="IMGUI\imgui_impl_dx11.h" />

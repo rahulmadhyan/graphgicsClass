@@ -70,11 +70,6 @@ protected:
 
 	D3D11_VIEWPORT viewport;
 
-	// ImGui
-	bool show_demo_window = true;
-	bool show_another_window = false;
-	ImVec4 clear_color = ImVec4(0.0f, 0.55f, 0.60f, 1.00f);
-
 	// Helper function for allocating a console window
 	void CreateConsoleWindow(int bufferLines, int bufferColumns, int windowLines, int windowColumns);
 

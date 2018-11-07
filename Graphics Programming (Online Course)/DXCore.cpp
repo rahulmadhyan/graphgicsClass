@@ -388,42 +388,6 @@ HRESULT DXCore::Run()
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 
-			if (show_demo_window)
-				ImGui::ShowDemoWindow(&show_demo_window);
-
-			// sample window
-			{
-				static float f = 0.0f;
-				static int counter = 0;
-
-				ImGui::Begin("Hello!");
-
-				ImGui::Text("Text");
-				ImGui::Checkbox("Demo Window", &show_demo_window);
-				ImGui::Checkbox("Another window", &show_another_window);
-
-				ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-				ImGui::ColorEdit3("Clear color", (float*)&clear_color);
-
-				if (ImGui::Button("Button"))
-					counter++;
-
-				ImGui::SameLine();
-				ImGui::Text("Counter = %d", counter);
-
-				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-				ImGui::End();
-			}
-
-			if (show_another_window)
-			{
-				ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-				ImGui::Text("Hello from another window!");
-				if (ImGui::Button("Close Me"))
-					show_another_window = false;
-				ImGui::End();
-			}
-
 			// Update timer and title bar (if necessary)
 			UpdateTimer();
 			if(titleBarStats)
