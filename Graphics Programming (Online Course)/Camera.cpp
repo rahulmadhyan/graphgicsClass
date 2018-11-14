@@ -56,6 +56,18 @@ XMFLOAT4X4 Camera::GetProjectionMatrix()
 	return projectionMatrix;
 }
 
+void Camera::SetPosition(float x, float y, float z)
+{
+	XMVECTOR pos = XMVectorSet(x, y, z, 0);
+	XMStoreFloat3(&position, pos);
+}
+
+void Camera::SetRotation(float x, float y)
+{
+	xRotation = x;
+	yRotation = y;
+}
+
 void Camera::Update(float deltaTime, float totalTime)
 {
 	XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw(xRotation, yRotation, 0.0f);
@@ -109,32 +121,39 @@ void Camera::Update(float deltaTime, float totalTime)
 		newDirection,     // Direction the camera is looking
 		up);     // "Up" direction in 3D space (prevents roll)
 	XMStoreFloat4x4(&viewMatrix, XMMatrixTranspose(V)); // Transpose for HLSL!
+
+	DrawCameraEditor();
 }
 
-void Camera::SetXRotation(float amount)
+void Camera::DrawCameraEditor()
 {
-	xRotation += amount * 0.001f;;
-	/*if (xRotation < -0.9f)
-	{
-		xRotation = -0.9f;
-	}
-	if (xRotation > 0.9f)
-	{
-		xRotation = 0.9f;
-	}*/
-}
+	ImGui::Begin("Camera Editor", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
 
-void Camera::SetYRotation(float amount)
-{
-	yRotation += amount * 0.001f;
-	/*if (yRotation < -0.9f)
+	ImGui::SetWindowCollapsed(0, 2);
+	ImGui::SetWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+	ImGui::SetWindowSize(ImVec2(400.0f, 100.0f), ImGuiCond_Always);
+	float position[3] = { this->position.x, this->position.y, this->position.z };
+	float rotation[2] = { xRotation, yRotation };
+
+	ImGui::Text("Camera Position");
+	ImGui::SameLine();
+	ImGui::SliderFloat3("##CameraPosition", position, -50.0f, 50.0f);
+
+	ImGui::Text("Camera Rotation");
+	ImGui::SameLine();
+	ImGui::SliderFloat2("##CameraRotation", rotation, -1.0f, 1.0f);
+
+	SetPosition(position[0], position[1], position[2]);
+	SetRotation(rotation[0], rotation[1]);
+
+	ImGui::NewLine();
+	ImGui::SameLine(ImGui::GetWindowWidth() * 0.5f - ImGui::CalcItemWidth() * 0.2f);
+	if (ImGui::Button("Reset Camera"))
 	{
-		yRotation = -0.9f;
+		ResetCamera();
 	}
-	if (yRotation > 0.9f)
-	{
-		yRotation = 0.9f;
-	}*/
+
+	ImGui::End();
 }
 
 void Camera::SetProjectionMatrix(unsigned int newWidth, unsigned int newHeight)

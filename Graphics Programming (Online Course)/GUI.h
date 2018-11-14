@@ -1,12 +1,24 @@
 #pragma once
 #include "stdafx.h"
+#include "Camera.h"
+
+class Camera;
 
 class GUI
 {
 public:
-	static void Draw();
+	static GUI* getInstance()
+	{
+		static GUI* instance = NULL;
+		if (instance == NULL)
+		{
+			instance = DBG_NEW GUI;
+		}
+		_ASSERT(instance);
 
-private:
-	static void DrawCameraEditor();
+		return instance;
+	}
+
+	void Draw();
 };
 

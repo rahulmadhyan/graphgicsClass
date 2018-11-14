@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include <Windows.h>
 #include "Game.h"
+#define _CRTDBG_MAP_ALLOC  
+#include <stdlib.h>  
+#include <crtdbg.h>  
 
 // --------------------------------------------------------
 // Entry point for a graphical (non-console) Windows application
@@ -16,8 +19,9 @@ int WINAPI WinMain(
 	// way of determining if we forgot to clean something up
 	//  - You may want to use something more advanced, like Visual Leak Detector
 	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+#else
+	#define DBG_NEW new
 #endif
-
 	// Create the Game object using
 	// the app handle we got from WinMain
 	Game dxGame(hInstance);

@@ -15,10 +15,12 @@ public:
 	DirectX::XMFLOAT4X4 GetViewMatrix();
 	DirectX::XMFLOAT4X4 GetProjectionMatrix();
 	
-	void Update(float deltaTime, float totalTime);
-	void SetXRotation(float amount);
-	void SetYRotation(float amount);
+	void SetPosition(float x, float y, float z);
+	void SetRotation(float x, float y);
 	void SetProjectionMatrix(unsigned int newWidth, unsigned int newHeight);
+
+	void Update(float deltaTime, float totalTime);
+	void DrawCameraEditor();
 	void ResetCamera();
 
 private:

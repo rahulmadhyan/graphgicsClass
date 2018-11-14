@@ -220,7 +220,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	ID3D11ShaderResourceView *const pSRV[16] = { NULL };
 	context->PSSetShaderResources(0, 16, pSRV);
 
-	GUI::Draw();
+	GUI::getInstance()->Draw();
 
 	swapChain->Present(0, 0);
 }
