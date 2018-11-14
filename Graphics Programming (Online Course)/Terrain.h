@@ -16,18 +16,17 @@ const int TEXTURE_REPEAT = 32;
 
 struct HeightMapInfo
 {
-	int terrainWidth;
-	int terrainHeight;
-	DirectX::XMFLOAT3 *heightMap; 
-	DirectX::XMFLOAT3 *normal;
-	DirectX::XMFLOAT2 *uv;
+	int terrainSize = 0;
+	DirectX::XMFLOAT3 *heightMap = 0; 
+	DirectX::XMFLOAT3 *normal = 0;
+	DirectX::XMFLOAT2 *uv = 0;
 };
 
 class Terrain  
 {
 public:
-	Terrain(char* fileName, ID3D11Device* device);
-	Terrain(int imageWidth, int imageHeight, double persistence, double frequency, double amplitude, double smoothing, int octaves, int randomSeed);
+	Terrain(char* fileName, ID3D11Device* device, ID3D11DeviceContext* context);
+	Terrain(bool frustumCulling, int terrainSize, float persistence, float frequency, float amplitude, float smoothing, int octaves, int randomSeed, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename, ID3D11Device* device, ID3D11DeviceContext* context);
 	~Terrain();
 
 	int GetTerrainCellCount();
@@ -38,11 +37,11 @@ public:
 	
 	Mesh* GetMesh();
 	
-	void Initialize(ID3D11Device* device, ID3D11DeviceContext* context, bool _frustumCulling, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename);
+	void Initialize();
 	void Render(ID3D11DeviceContext* context, bool terrainShader, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum);
-	
-private:
+	void DrawTerrainEditor();
 
+private:
 	struct MatrixBufferType
 	{
 		XMFLOAT4X4 world;
@@ -63,8 +62,17 @@ private:
 	int terrainCellCount;
 
 	HeightMapInfo hmInfo;
-	
+	int octaves;
+	int randomSeed;
+	float persistence;
+	float frequency;
+	float amplitude;
+	float smoothing;
+
 	PerlinNoise perlinNoiseGenerator;
+
+	ID3D11Device* device;
+	ID3D11DeviceContext* context;
 
 	ID3D11Buffer* vertexBuffer;
 	ID3D11Buffer* indexBuffer;
@@ -90,15 +98,15 @@ private:
 	int GetDXGIFormatBitsPerPixel(DXGI_FORMAT& dxgiFormat);
 	int LoadImageDataFromFile(BYTE** imageData, LPCWSTR filename, int &bytesPerRow);
 
-	void GenerateRandomHeightMap(int imageWidth, int imageHeight, double persistence, double frequency, double amplitude, double smoothing, int octaves, int randomSeed);
+	void GenerateRandomHeightMap();
 	
 	void CalulateNormals();
 	void CalculateTextureCoordinates();
-	void LoadTextures(ID3D11Device* device, ID3D11DeviceContext* context, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename);
-	void InitializeBuffers(ID3D11Device* device);
-	void InitializeTerraincCells(ID3D11Device* device, Vertex* terrainVertices);
+	void LoadTextures(WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename);
+	void InitializeBuffers();
+	void InitializeTerraincCells(Vertex* terrainVertices);
 
-	void InitializeShaders(ID3D11Device* device);
+	void InitializeShaders();
 	void SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection);
 };
 

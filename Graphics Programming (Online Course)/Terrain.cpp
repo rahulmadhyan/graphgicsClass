@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Terrain.h"
 
-Terrain::Terrain(char *fileName, ID3D11Device* device)
+Terrain::Terrain(char *fileName, ID3D11Device* device, ID3D11DeviceContext* context) : device(device), context(context)
 {
 	int imageBytesPerRow;
 	BYTE* imageData;
@@ -15,9 +15,40 @@ Terrain::Terrain(char *fileName, ID3D11Device* device)
 	delete imageData;
 }
 
-Terrain::Terrain(int imageWidth, int imageHeight, double persistence, double frequency, double amplitude, double smoothing, int octaves, int randomSeed)
+Terrain::Terrain(bool frustumCulling, int terrainSize, float persistence, float frequency, float amplitude, float smoothing, int octaves, int randomSeed, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename, ID3D11Device* device, ID3D11DeviceContext* context) : device(device), context(context),
+																																																																																	frustumCulling(frustumCulling),
+																																																																																	persistence(persistence),
+																																																																																	frequency(frequency),
+																																																																																	amplitude(amplitude),
+																																																																																	smoothing(smoothing),
+																																																																																	octaves(octaves),
+																																																																																	randomSeed(randomSeed)
 {
-	GenerateRandomHeightMap(imageWidth, imageHeight, persistence, frequency, amplitude, smoothing, octaves, randomSeed);
+	terrainCellCount = 0;
+
+	vertexBuffer = 0;
+	indexBuffer = 0;
+
+	grassTexture = 0;
+	slopeTexture = 0;
+	rockTexture = 0;
+
+	vertexShader = 0;
+	pixelShader = 0;
+	inputLayout = 0;
+	sampler = 0;
+	matrixBuffer = 0;
+	lightBuffer = 0;
+
+	terrainMesh = 0;
+
+	LoadTextures(grassTextureFilename, slopeTextureFilename, rockTextureFilename, normalTextureFilename);
+
+	hmInfo.terrainSize = terrainSize;
+
+	GenerateRandomHeightMap();
+
+	InitializeShaders();
 }
 
 Terrain::~Terrain()
@@ -128,35 +159,13 @@ Mesh* Terrain::GetMesh()
 	return terrainMesh; 
 }
 
-void Terrain::Initialize(ID3D11Device* device, ID3D11DeviceContext* context, bool _frustumCulling, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename)
+void Terrain::Initialize()
 {
-	terrainCellCount = 0;
-
-	vertexBuffer = 0;
-	indexBuffer = 0;
-
-	grassTexture = 0;
-	slopeTexture = 0;
-	rockTexture = 0;
-
-	vertexShader = 0;
-	pixelShader = 0;
-	inputLayout = 0;
-	sampler = 0;
-	matrixBuffer = 0;
-	lightBuffer = 0;
-
-	frustumCulling = _frustumCulling;
-
 	CalulateNormals();
 
 	CalculateTextureCoordinates();
 
-	LoadTextures(device, context, grassTextureFilename, slopeTextureFilename, rockTextureFilename, normalTextureFilename);
-
-	InitializeBuffers(device);
-
-	InitializeShaders(device);
+	InitializeBuffers();
 }
 
 void Terrain::Render(ID3D11DeviceContext* context, bool terrainShader, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum)
@@ -254,6 +263,52 @@ void Terrain::Render(ID3D11DeviceContext* context, bool terrainShader, XMFLOAT4X
 		}
 	}
 	
+	if(terrainShader)
+		DrawTerrainEditor();
+}
+
+void Terrain::DrawTerrainEditor()
+{
+	ImGui::Begin("Terrain Editor", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);  
+
+	ImGui::SetWindowCollapsed(0, ImGuiCond_Once);
+	ImGui::SetWindowSize(ImVec2(500.0f, 200.0f), ImGuiCond_Always);
+	
+	ImGui::PushItemWidth(300.0f);
+	ImGui::Text("Terran Size         ");
+	ImGui::SameLine();
+	ImGui::SliderInt("##TerrainSize", &hmInfo.terrainSize, 0, 512);
+
+	ImGui::Text("Terran Frequency    ");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##TerrainFrequency", &frequency, 0.0f, 0.1f);
+
+	ImGui::Text("Terran Persistence  ");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##TerrainPersistence", &persistence, 0.0f, 10.0);
+
+	ImGui::Text("Terran Amplitude    ");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##TerrainAmplitude", &amplitude, 0.0f, 20.0);
+
+	ImGui::Text("Terran Smoothing    ");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##TerrainSmoothing", &smoothing, 0.0f, 10.0);
+
+	ImGui::Text("Terran Octaves      ");
+	ImGui::SameLine();
+	ImGui::SliderInt("##TerrainOctaves", &octaves, 0.0f, 10.0);
+
+	ImGui::NewLine();
+	ImGui::SameLine(ImGui::GetWindowWidth() * 0.5f);
+	if (ImGui::Button("Generate"))
+	{
+		GenerateRandomHeightMap();
+		Initialize();
+	}
+
+	ImGui::PopItemWidth();
+	ImGui::End();
 }
 
 DXGI_FORMAT Terrain::GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID)
@@ -457,21 +512,21 @@ int Terrain::LoadImageDataFromFile(BYTE** imageData, LPCWSTR filename, int &byte
 		if (FAILED(hr)) return 0;
 	}
 
-	hmInfo.terrainWidth = textureWidth;
-	hmInfo.terrainHeight = textureHeight;
-	hmInfo.heightMap = new DirectX::XMFLOAT3[hmInfo.terrainHeight * hmInfo.terrainWidth];
-	hmInfo.normal = new XMFLOAT3[hmInfo.terrainHeight * hmInfo.terrainWidth];
-	hmInfo.uv = new XMFLOAT2[hmInfo.terrainHeight * hmInfo.terrainWidth];
+	hmInfo.terrainSize = textureWidth;
+	hmInfo.terrainSize = textureHeight;
+	hmInfo.heightMap = new DirectX::XMFLOAT3[hmInfo.terrainSize * hmInfo.terrainSize];
+	hmInfo.normal = new XMFLOAT3[hmInfo.terrainSize * hmInfo.terrainSize];
+	hmInfo.uv = new XMFLOAT2[hmInfo.terrainSize * hmInfo.terrainSize];
 
 	int k = 0;
 	BYTE* height = (BYTE*)malloc(imageSize);
 
-	for (int i = 0; i < hmInfo.terrainHeight; i++)
+	for (int i = 0; i < hmInfo.terrainSize; i++)
 	{
-		for (int j = 0; j < hmInfo.terrainWidth * (bitsPerPixel / 8); j++)
+		for (int j = 0; j < hmInfo.terrainSize * (bitsPerPixel / 8); j++)
 		{
 			{
-				*(height + (k)) = *(*imageData + (i * (hmInfo.terrainWidth * (bitsPerPixel / 8)) + j));
+				*(height + (k)) = *(*imageData + (i * (hmInfo.terrainSize * (bitsPerPixel / 8)) + j));
 				k++;
 			}
 		}
@@ -483,10 +538,10 @@ int Terrain::LoadImageDataFromFile(BYTE** imageData, LPCWSTR filename, int &byte
 
 	k = 0;
 
-	for (int j = 0; j < hmInfo.terrainHeight; j++) {
-		for (int i = 0; i < hmInfo.terrainWidth; i++) {
+	for (int j = 0; j < hmInfo.terrainSize; j++) {
+		for (int i = 0; i < hmInfo.terrainSize; i++) {
 
-			index = (j * hmInfo.terrainHeight) + i;
+			index = (j * hmInfo.terrainSize) + i;
 
 			currentHeight = *(height + k);
 
@@ -507,22 +562,38 @@ int Terrain::LoadImageDataFromFile(BYTE** imageData, LPCWSTR filename, int &byte
 	return imageSize;
 }
 
-void Terrain::GenerateRandomHeightMap(int imageWidth, int imageHeight, double persistence, double frequency, double amplitude, double smoothing, int octaves, int randomSeed)
+void Terrain::GenerateRandomHeightMap()
 {
 	int index;
 
 	perlinNoiseGenerator = PerlinNoise(persistence, frequency, amplitude, smoothing, octaves, randomSeed);
 
-	hmInfo.terrainWidth = imageWidth;
-	hmInfo.terrainHeight = imageHeight;
-	hmInfo.heightMap = new DirectX::XMFLOAT3[hmInfo.terrainHeight * hmInfo.terrainWidth];
-	hmInfo.normal = new XMFLOAT3[hmInfo.terrainHeight * hmInfo.terrainWidth];
-	hmInfo.uv = new XMFLOAT2[hmInfo.terrainHeight * hmInfo.terrainWidth];
+	if (hmInfo.heightMap != NULL)
+	{
+		delete[] hmInfo.heightMap;
+		hmInfo.heightMap = 0;
+	}
 
-	for (int j = 0; j < hmInfo.terrainHeight; j++) {
-		for (int i = 0; i < hmInfo.terrainWidth; i++) {
+	if (hmInfo.normal != NULL)
+	{
+		delete[] hmInfo.normal;
+		hmInfo.normal = 0;
+	}
 
-			index = (j * hmInfo.terrainHeight) + i;
+	if (hmInfo.uv != NULL)
+	{
+		delete[] hmInfo.uv;
+		hmInfo.uv = 0;
+	}
+
+	hmInfo.heightMap = new DirectX::XMFLOAT3[hmInfo.terrainSize * hmInfo.terrainSize];
+	hmInfo.normal = new XMFLOAT3[hmInfo.terrainSize * hmInfo.terrainSize];
+	hmInfo.uv = new XMFLOAT2[hmInfo.terrainSize * hmInfo.terrainSize];
+
+	for (int j = 0; j < hmInfo.terrainSize; j++) {
+		for (int i = 0; i < hmInfo.terrainSize; i++) {
+
+			index = (j * hmInfo.terrainSize) + i;
 
 			float value = perlinNoiseGenerator.GetHeight(i, j);
 
@@ -538,14 +609,14 @@ void Terrain::GenerateRandomHeightMap(int imageWidth, int imageHeight, double pe
 
 void Terrain::CalulateNormals()
 {
-	for (int i = 0; i < hmInfo.terrainHeight; i++) {
-		for (int j = 0; j < hmInfo.terrainWidth; j++) {
+	for (int i = 0; i < hmInfo.terrainSize; i++) {
+		for (int j = 0; j < hmInfo.terrainSize; j++) {
 
-			XMVECTOR oPosition = XMLoadFloat3(&hmInfo.heightMap[i * hmInfo.terrainWidth + j]);
-			XMVECTOR aPosition = XMLoadFloat3(&hmInfo.heightMap[((i + 1 < hmInfo.terrainHeight) ? i + 1 : i) * hmInfo.terrainWidth + j]);
-			XMVECTOR bPosition = XMLoadFloat3(&hmInfo.heightMap[i * hmInfo.terrainWidth + ((j - 1 < 0) ? j : j - 1)]);
-			XMVECTOR cPosition = XMLoadFloat3(&hmInfo.heightMap[((i - 1 < 0) ? i : i - 1) * hmInfo.terrainWidth + j]);
-			XMVECTOR dPosition = XMLoadFloat3(&hmInfo.heightMap[i * hmInfo.terrainWidth + ((j + 1 < hmInfo.terrainWidth) ? j + 1 : j)]);
+			XMVECTOR oPosition = XMLoadFloat3(&hmInfo.heightMap[i * hmInfo.terrainSize + j]);
+			XMVECTOR aPosition = XMLoadFloat3(&hmInfo.heightMap[((i + 1 < hmInfo.terrainSize) ? i + 1 : i) * hmInfo.terrainSize + j]);
+			XMVECTOR bPosition = XMLoadFloat3(&hmInfo.heightMap[i * hmInfo.terrainSize + ((j - 1 < 0) ? j : j - 1)]);
+			XMVECTOR cPosition = XMLoadFloat3(&hmInfo.heightMap[((i - 1 < 0) ? i : i - 1) * hmInfo.terrainSize + j]);
+			XMVECTOR dPosition = XMLoadFloat3(&hmInfo.heightMap[i * hmInfo.terrainSize + ((j + 1 < hmInfo.terrainSize) ? j + 1 : j)]);
 			XMVECTOR oa = aPosition - oPosition;
 			XMVECTOR ob = bPosition - oPosition;
 			XMVECTOR oc = cPosition - oPosition;
@@ -555,9 +626,9 @@ void Terrain::CalulateNormals()
 				XMVector3Normalize(XMVector3Cross(oc, ob)) +
 				XMVector3Normalize(XMVector3Cross(od, oc)) +
 				XMVector3Normalize(XMVector3Cross(oa, od)));
-			hmInfo.normal[i * hmInfo.terrainHeight + j].x = XMVectorGetX(normal);
-			hmInfo.normal[i * hmInfo.terrainHeight + j].y = XMVectorGetY(normal);
-			hmInfo.normal[i * hmInfo.terrainHeight + j].z = XMVectorGetZ(normal);
+			hmInfo.normal[i * hmInfo.terrainSize + j].x = XMVectorGetX(normal);
+			hmInfo.normal[i * hmInfo.terrainSize + j].y = XMVectorGetY(normal);
+			hmInfo.normal[i * hmInfo.terrainSize + j].z = XMVectorGetZ(normal);
 		}
 	}
 }
@@ -568,10 +639,10 @@ void Terrain::CalculateTextureCoordinates()
 	float incrementValue, tuCoordinate, tvCoordinate;
 
 	// Calculate how much to increment the texture coordinates by.
-	incrementValue = (float)TEXTURE_REPEAT / (float)hmInfo.terrainWidth;
+	incrementValue = (float)TEXTURE_REPEAT / (float)hmInfo.terrainSize;
 
 	// Calculate how many times to repeat the texture.
-	incrementCount = hmInfo.terrainWidth / TEXTURE_REPEAT;
+	incrementCount = hmInfo.terrainSize / TEXTURE_REPEAT;
 
 	// Initialize the tu and tv coordinate values.
 	tuCoordinate = 0.0f;
@@ -582,13 +653,13 @@ void Terrain::CalculateTextureCoordinates()
 	tvCount = 0;
 
 	// Loop through the entire height map and calculate the tu and tv texture coordinates for each vertex.
-	for (j = 0; j < hmInfo.terrainHeight; j++)
+	for (j = 0; j < hmInfo.terrainSize; j++)
 	{
-		for (i = 0; i < hmInfo.terrainWidth; i++)
+		for (i = 0; i < hmInfo.terrainSize; i++)
 		{
 			// Store the texture coordinate in the height map.
-			hmInfo.uv[(hmInfo.terrainHeight * j) + i].x = tuCoordinate;
-			hmInfo.uv[(hmInfo.terrainHeight * j) + i].y = tvCoordinate;
+			hmInfo.uv[(hmInfo.terrainSize * j) + i].x = tuCoordinate;
+			hmInfo.uv[(hmInfo.terrainSize * j) + i].y = tvCoordinate;
 
 			// Increment the tu texture coordinate by the increment value and increment the index by one.
 			tuCoordinate += incrementValue;
@@ -615,7 +686,7 @@ void Terrain::CalculateTextureCoordinates()
 	}
 }
 
-void Terrain::LoadTextures(ID3D11Device* device, ID3D11DeviceContext* context, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename)
+void Terrain::LoadTextures(WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename)
 {
 	CreateWICTextureFromFile(device, context, grassTextureFilename, 0, &grassTexture);
 	CreateWICTextureFromFile(device, context, slopeTextureFilename, 0, &slopeTexture);
@@ -623,7 +694,7 @@ void Terrain::LoadTextures(ID3D11Device* device, ID3D11DeviceContext* context, W
 	CreateDDSTextureFromFile(device, context, normalTextureFilename, 0, &normalTexture);
 }
 
-void Terrain::InitializeBuffers(ID3D11Device* device)
+void Terrain::InitializeBuffers()
 {
 	Vertex* vertices;
 	UINT* indices;
@@ -635,29 +706,29 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 	float tu, tv;
 
 	// Calculate the number of vertices in the terrain mesh.
-	int vertexCount = (hmInfo.terrainWidth - 1) * (hmInfo.terrainHeight - 1) * 6;
+	int vertexCount = (hmInfo.terrainSize - 1) * (hmInfo.terrainSize - 1) * 6;
 
 	// Set the index count to the same as the vertex count.
 	int indexCount = vertexCount;
 
 	// Create the vertex array.
-	vertices = new Vertex[vertexCount];
+	vertices = DBG_NEW Vertex[vertexCount];
 
 	// Create the index array.
-	indices = new UINT[indexCount];
+	indices = DBG_NEW UINT[indexCount];
 
 	// Initialize the index to the vertex buffer.
 	index = 0;
 
 	// Load the vertex and index array with the terrain data.
-	for (j = 0; j < (hmInfo.terrainHeight - 1); j++)
+	for (j = 0; j < (hmInfo.terrainSize - 1); j++)
 	{
-		for (i = 0; i < (hmInfo.terrainWidth - 1); i++)
+		for (i = 0; i < (hmInfo.terrainSize - 1); i++)
 		{
-			index1 = (hmInfo.terrainHeight * j) + i;          // Bottom left.
-			index2 = (hmInfo.terrainHeight * j) + (i + 1);      // Bottom right.
-			index3 = (hmInfo.terrainHeight * (j + 1)) + i;      // Upper left.
-			index4 = (hmInfo.terrainHeight * (j + 1)) + (i + 1);  // Upper right.
+			index1 = (hmInfo.terrainSize * j) + i;          // Bottom left.
+			index2 = (hmInfo.terrainSize * j) + (i + 1);      // Bottom right.
+			index3 = (hmInfo.terrainSize * (j + 1)) + i;      // Upper left.
+			index4 = (hmInfo.terrainSize * (j + 1)) + (i + 1);  // Upper right.
 
 			// Upper left.
 			tv = hmInfo.uv[index3].y;
@@ -727,13 +798,19 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 		}
 	}
 
-	terrainMesh = new Mesh(vertices, vertexCount, indices, indexCount, device);
+	if (terrainMesh != NULL)
+	{
+		delete terrainMesh;
+		terrainMesh = 0;
+	}
+
+	terrainMesh = DBG_NEW Mesh(vertices, vertexCount, indices, indexCount, device);
 
 	vertexBuffer = terrainMesh->GetVertextBuffer();
 	indexBuffer = terrainMesh->GetIndexBuffer();
 
 	if(frustumCulling)
-		InitializeTerraincCells(device, vertices);
+		InitializeTerraincCells(vertices);
 
 	// Release the arrays now that the buffers have been created and loaded.
 	delete[] vertices;
@@ -743,7 +820,7 @@ void Terrain::InitializeBuffers(ID3D11Device* device)
 	indices = 0;
 }
 
-void Terrain::InitializeTerraincCells(ID3D11Device* device, Vertex* terrainVertices)
+void Terrain::InitializeTerraincCells(Vertex* terrainVertices)
 {
 	int cellHeight, cellWidth;
 	int cellRowCount;
@@ -752,7 +829,7 @@ void Terrain::InitializeTerraincCells(ID3D11Device* device, Vertex* terrainVerti
 	cellHeight = 33;
 	cellWidth = 33;
 
-	cellRowCount = (hmInfo.terrainWidth - 1) / (cellWidth - 1);
+	cellRowCount = (hmInfo.terrainSize - 1) / (cellWidth - 1);
 	terrainCellCount = cellRowCount * cellRowCount;
 
 	terrainCells = new TerrainCell[terrainCellCount];
@@ -763,12 +840,12 @@ void Terrain::InitializeTerraincCells(ID3D11Device* device, Vertex* terrainVerti
 		{
 			index = (cellRowCount * j) + i;
 
-			terrainCells[index].InitializeBuffers(device, terrainVertices, i, j, cellHeight, cellWidth, hmInfo.terrainWidth);
+			terrainCells[index].InitializeBuffers(device, terrainVertices, i, j, cellHeight, cellWidth, hmInfo.terrainSize);
 		}
 	}
 }
 
-void Terrain::InitializeShaders(ID3D11Device* device)
+void Terrain::InitializeShaders()
 {
 	HRESULT result;
 	ID3DBlob* vertexShaderBuffer;
@@ -792,52 +869,61 @@ void Terrain::InitializeShaders(ID3D11Device* device)
 	result = D3DCompileFromFile(L"Resources/Shaders/TerrainPixelShader.hlsl", NULL, NULL, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
 		&pixelShaderBuffer, 0);
 
-	// Create the vertex shader from the buffer.
-	result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &vertexShader);
+	if (vertexShader == NULL)
+	{
+		// Create the vertex shader from the buffer.
+		result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &vertexShader);
+	}
+	
+	if (pixelShader == NULL)
+	{
+		// Create the pixel shader from the buffer.
+		result = device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &pixelShader);
+	}
+	
+	if (inputLayout == NULL)
+	{
+		// Create the vertex input layout description.
+		inputLayoutDesc[0].SemanticName = "POSITION";
+		inputLayoutDesc[0].SemanticIndex = 0;
+		inputLayoutDesc[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		inputLayoutDesc[0].InputSlot = 0;
+		inputLayoutDesc[0].AlignedByteOffset = 0;
+		inputLayoutDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		inputLayoutDesc[0].InstanceDataStepRate = 0;
 
-	// Create the pixel shader from the buffer.
-	result = device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &pixelShader);
+		inputLayoutDesc[1].SemanticName = "TEXCOORD";
+		inputLayoutDesc[1].SemanticIndex = 0;
+		inputLayoutDesc[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+		inputLayoutDesc[1].InputSlot = 0;
+		inputLayoutDesc[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		inputLayoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		inputLayoutDesc[1].InstanceDataStepRate = 0;
 
-	// Create the vertex input layout description.
-	inputLayoutDesc[0].SemanticName = "POSITION";
-	inputLayoutDesc[0].SemanticIndex = 0;
-	inputLayoutDesc[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	inputLayoutDesc[0].InputSlot = 0;
-	inputLayoutDesc[0].AlignedByteOffset = 0;
-	inputLayoutDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	inputLayoutDesc[0].InstanceDataStepRate = 0;
+		inputLayoutDesc[2].SemanticName = "NORMAL";
+		inputLayoutDesc[2].SemanticIndex = 0;
+		inputLayoutDesc[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		inputLayoutDesc[2].InputSlot = 0;
+		inputLayoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		inputLayoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		inputLayoutDesc[2].InstanceDataStepRate = 0;
 
-	inputLayoutDesc[1].SemanticName = "TEXCOORD";
-	inputLayoutDesc[1].SemanticIndex = 0;
-	inputLayoutDesc[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	inputLayoutDesc[1].InputSlot = 0;
-	inputLayoutDesc[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	inputLayoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	inputLayoutDesc[1].InstanceDataStepRate = 0;
+		inputLayoutDesc[3].SemanticName = "TANGENT";
+		inputLayoutDesc[3].SemanticIndex = 0;
+		inputLayoutDesc[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+		inputLayoutDesc[3].InputSlot = 0;
+		inputLayoutDesc[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		inputLayoutDesc[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		inputLayoutDesc[3].InstanceDataStepRate = 0;
 
-	inputLayoutDesc[2].SemanticName = "NORMAL";
-	inputLayoutDesc[2].SemanticIndex = 0;
-	inputLayoutDesc[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	inputLayoutDesc[2].InputSlot = 0;
-	inputLayoutDesc[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	inputLayoutDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	inputLayoutDesc[2].InstanceDataStepRate = 0;
+		// Get a count of the elements in the layout.
+		numElements = sizeof(inputLayoutDesc) / sizeof(inputLayoutDesc[0]);
 
-	inputLayoutDesc[3].SemanticName = "TANGENT";
-	inputLayoutDesc[3].SemanticIndex = 0;
-	inputLayoutDesc[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	inputLayoutDesc[3].InputSlot = 0;
-	inputLayoutDesc[3].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	inputLayoutDesc[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	inputLayoutDesc[3].InstanceDataStepRate = 0;
-
-	// Get a count of the elements in the layout.
-	numElements = sizeof(inputLayoutDesc) / sizeof(inputLayoutDesc[0]);
-
-	// Create the vertex input layout.
-	result = device->CreateInputLayout(inputLayoutDesc, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(),
-		&inputLayout);
-
+		// Create the vertex input layout.
+		result = device->CreateInputLayout(inputLayoutDesc, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(),
+			&inputLayout);
+	}
+	
 	// Release the vertex shader buffer and pixel shader buffer since they are no longer needed.
 	vertexShaderBuffer->Release();
 	vertexShaderBuffer = 0;
@@ -845,46 +931,55 @@ void Terrain::InitializeShaders(ID3D11Device* device)
 	pixelShaderBuffer->Release();
 	pixelShaderBuffer = 0;
 
-	// Create a texture sampler state description.
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.MipLODBias = 0.0f;
-	samplerDesc.MaxAnisotropy = 1;
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	samplerDesc.BorderColor[0] = 0;
-	samplerDesc.BorderColor[1] = 0;
-	samplerDesc.BorderColor[2] = 0;
-	samplerDesc.BorderColor[3] = 0;
-	samplerDesc.MinLOD = 0;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	if (sampler == NULL)
+	{
+		// Create a texture sampler state description.
+		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		samplerDesc.MipLODBias = 0.0f;
+		samplerDesc.MaxAnisotropy = 1;
+		samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+		samplerDesc.BorderColor[0] = 0;
+		samplerDesc.BorderColor[1] = 0;
+		samplerDesc.BorderColor[2] = 0;
+		samplerDesc.BorderColor[3] = 0;
+		samplerDesc.MinLOD = 0;
+		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	// Create the texture sampler state.
-	result = device->CreateSamplerState(&samplerDesc, &sampler);
+		// Create the texture sampler state.
+		result = device->CreateSamplerState(&samplerDesc, &sampler);
+	}
+	
+	if (matrixBuffer == NULL)
+	{
+		// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
+		matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
+		matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		matrixBufferDesc.MiscFlags = 0;
+		matrixBufferDesc.StructureByteStride = 0;
 
-	// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
-	matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
-	matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	matrixBufferDesc.MiscFlags = 0;
-	matrixBufferDesc.StructureByteStride = 0;
+		// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
+		result = device->CreateBuffer(&matrixBufferDesc, NULL, &matrixBuffer);
+	}
+	
+	if (lightBuffer == NULL)
+	{
+		// Setup the description of the light dynamic constant buffer that is in the pixel shader.
+		// Note that ByteWidth always needs to be a multiple of 16 if using D3D11_BIND_CONSTANT_BUFFER or CreateBuffer will fail.
+		lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		lightBufferDesc.ByteWidth = sizeof(LightBufferType);
+		lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		lightBufferDesc.MiscFlags = 0;
+		lightBufferDesc.StructureByteStride = 0;
 
-	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
-	result = device->CreateBuffer(&matrixBufferDesc, NULL, &matrixBuffer);
-
-	// Setup the description of the light dynamic constant buffer that is in the pixel shader.
-	// Note that ByteWidth always needs to be a multiple of 16 if using D3D11_BIND_CONSTANT_BUFFER or CreateBuffer will fail.
-	lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	lightBufferDesc.ByteWidth = sizeof(LightBufferType);
-	lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	lightBufferDesc.MiscFlags = 0;
-	lightBufferDesc.StructureByteStride = 0;
-
-	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
-	result = device->CreateBuffer(&lightBufferDesc, NULL, &lightBuffer);
+		// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
+		result = device->CreateBuffer(&lightBufferDesc, NULL, &lightBuffer);
+	}
 }
 
 void Terrain::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix,

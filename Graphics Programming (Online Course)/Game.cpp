@@ -52,6 +52,8 @@ Game::~Game()
 
 	delete frustum;
 
+	delete GUI::getInstance();
+
 	/*CComPtr<ID3D11Debug> debug; 
 	HRESULT hr = device->QueryInterface(IID_PPV_ARGS(&debug));
 
@@ -87,8 +89,8 @@ void Game::Init()
 void Game::CreateBasicGeometry()
 {
 	//gameTerrain = new Terrain("Resources/HeightMaps/demo.png", device);
-	gameTerrain = new Terrain(256, 256, 3.0, 0.01, 7.0, 2.5, 4, 2018);
-	gameTerrain->Initialize(device, context, false, L"Resources/Textures/grass1.jpg", L"Resources/Textures/dirt1.jpg", L"Resources/Textures/rock1.jpg", L"Resources/Textures/TerrainNormal.dds");
+	gameTerrain = new Terrain(false, 256, 3.0, 0.01, 7.0, 2.5, 4, 2018, L"Resources/Textures/grass1.jpg", L"Resources/Textures/dirt1.jpg", L"Resources/Textures/rock1.jpg", L"Resources/Textures/TerrainNormal.dds", device, context);
+	gameTerrain->Initialize();
 
 	terrainEntity = new GameEntity(gameTerrain->GetMesh(), NULL);
 

@@ -153,6 +153,16 @@ void Camera::DrawCameraEditor()
 		ResetCamera();
 	}
 
+	if(ImGui::IsWindowCollapsed())
+	{
+		ImGui::SetNextWindowPos(ImVec2(0.0f, 25.0f));
+	}
+	else
+	{
+		float windowHeight = ImGui::GetWindowHeight();
+		ImGui::SetNextWindowPos(ImVec2(0.0f, windowHeight + 5.0f));
+	}
+
 	ImGui::End();
 }
 
