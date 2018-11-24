@@ -168,10 +168,10 @@ void Terrain::Initialize()
 	InitializeBuffers();
 }
 
-void Terrain::Render(ID3D11DeviceContext* context, bool terrainShader, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum)
+void Terrain::Render(ID3D11DeviceContext* context, bool terrainShader, XMFLOAT3 cameraPosition, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum)
 {
 	if(terrainShader)
-		SetShaderParameters(context, worldMatrix, viewMatrix, projectionMatrix, dLight.AmbientColor, dLight.DiffuseColor, dLight.Direction);
+		SetShaderParameters(context, cameraPosition, worldMatrix, viewMatrix, projectionMatrix, dLight.AmbientColor, dLight.DiffuseColor, dLight.Direction);
 
 	if (frustumCulling)
 	{
@@ -861,13 +861,24 @@ void Terrain::InitializeShaders()
 	vertexShaderBuffer = 0;
 	pixelShaderBuffer = 0;
 
+	const D3D_SHADER_MACRO defines[] =
+	{
+		"FOG", "1",
+		NULL, NULL
+	};
+
+	ID3DBlob* error = nullptr;
+	
 	// Compile the vertex shader code.
 	result = D3DCompileFromFile(L"Resources/Shaders/TerrainVertexShader.hlsl", NULL, NULL, "main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
-		&vertexShaderBuffer, 0);
+		&vertexShaderBuffer, &error);
 
 	// Compile the pixel shader code.
-	result = D3DCompileFromFile(L"Resources/Shaders/TerrainPixelShader.hlsl", NULL, NULL, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
-		&pixelShaderBuffer, 0);
+	result = D3DCompileFromFile(L"Resources/Shaders/TerrainPixelShader.hlsl", defines, NULL, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0,
+		&pixelShaderBuffer, &error);
+
+	if (error != nullptr)
+		OutputDebugStringA((char*)error->GetBufferPointer());
 
 	if (vertexShader == NULL)
 	{
@@ -982,7 +993,7 @@ void Terrain::InitializeShaders()
 	}
 }
 
-void Terrain::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix,
+void Terrain::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT3 cameraPosition, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix,
 	XMFLOAT4X4 projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection)
 {
 	HRESULT result;
@@ -1024,8 +1035,11 @@ void Terrain::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 world
 	// Copy the lighting variables into the constant buffer.
 	dataPtr2->ambientColor = ambientColor;
 	dataPtr2->diffuseColor = diffuseColor;
+	dataPtr2->fogColor = XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f);
+	dataPtr2->cameraPosition = cameraPosition;
 	dataPtr2->lightDirection = lightDirection;
-	dataPtr2->padding = 0.0f;
+	dataPtr2->fogStart = 25.0f;
+	dataPtr2->fogRange = 50.0f;
 
 	// Unlock the constant buffer.
 	context->Unmap(lightBuffer, 0);

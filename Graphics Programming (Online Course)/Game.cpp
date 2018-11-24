@@ -94,7 +94,7 @@ void Game::CreateBasicGeometry()
 
 	terrainEntity = new GameEntity(gameTerrain->GetMesh(), NULL);
 
-	terrainEntity->SetTranslation(-20.0f, 5.0f, 10.0f);
+	terrainEntity->SetTranslation(-20.0f, 25.0f, 10.0f);
 	terrainEntity->SetRotation(0.0f, 0.0f, 0.0f);
 	terrainEntity->SetScale(0.1, 0.1f, 0.1f);
 	terrainEntity->SetWorldMatrix();
@@ -112,10 +112,10 @@ void Game::CreateBasicGeometry()
 	reflection = new Reflection();
 	reflection->Initialize(device);
 
-	water = new Water(5.0f, 75.0f, 0.1f, 200.0f, XMFLOAT2(0.1f, 0.2f), XMFLOAT4(0.0f, 0.8f, 1.0f, 1.0f));
+	water = new Water(25.0f, 75.0f, 0.1f, 200.0f, XMFLOAT2(0.1f, 0.2f), XMFLOAT4(0.0f, 0.8f, 1.0f, 1.0f));
 	water->Initialize(device, L"Resources/Textures/WaterNormal.dds");
 	waterEntity = new GameEntity(water->GetMesh(), NULL);
-	waterEntity->SetTranslation(0.0f, 5.0f, 30.0f);
+	waterEntity->SetTranslation(0.0f, 25.0f, 30.0f);
 	waterEntity->SetRotation(0.0f, 0.0f, 0.0f);
 	waterEntity->SetScale(0.1, 0.1f, 0.1f);
 	waterEntity->SetWorldMatrix();
@@ -146,8 +146,7 @@ void Game::RenderRefraction()
 	refractionTexture->SetRenderTarget(context);
 	refractionTexture->ClearRenderTarget(context, 0.0f, 0.0f, 0.0f, 1.0f);
 
-	gameTerrain->Render(context, false, terrainEntity->GetWorldMatrix(),
-		mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1, frustum);
+	gameTerrain->Render(context, false, mainCamera.GetPosition(), terrainEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1, frustum);
 	
 	reflection->Render(context, gameTerrain->GetMesh()->GetIndexCount(), terrainEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), gameTerrain->GetColorTexture1(), gameTerrain->GetColorTexture2(), gameTerrain->GetColorTexture3(), water->GetNormalTexture() , dLight1.DiffuseColor, dLight1.Direction, 2.0f, clipPlane);
 
@@ -168,7 +167,7 @@ void Game::RenderReflection()
 
 	skybox->Render(context, reflectionViewMatrix, mainCamera.GetProjectionMatrix());
 
-	gameTerrain->Render(context, false, terrainEntity->GetWorldMatrix(), reflectionViewMatrix, mainCamera.GetProjectionMatrix(), dLight1, frustum);
+	gameTerrain->Render(context, false, mainCamera.GetPosition(), terrainEntity->GetWorldMatrix(), reflectionViewMatrix, mainCamera.GetProjectionMatrix(), dLight1, frustum);
 
 	reflection->Render(context, gameTerrain->GetMesh()->GetIndexCount(), terrainEntity->GetWorldMatrix(), reflectionViewMatrix, mainCamera.GetProjectionMatrix(), gameTerrain->GetColorTexture1(), gameTerrain->GetColorTexture2(), gameTerrain->GetColorTexture3(), water->GetNormalTexture(), dLight1.DiffuseColor, dLight1.Direction, 2.0f, clipPlane);
 
@@ -215,7 +214,7 @@ void Game::Draw(float deltaTime, float totalTime)
 
 	skybox->Render(context, mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
 
-	gameTerrain->Render(context, true, terrainEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1, frustum);
+	gameTerrain->Render(context, true, mainCamera.GetPosition(), terrainEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1, frustum);
 	
 	water->Render(context, waterEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), water->GetReflectionMatrix(), refractionTexture->GetShaderResourceView(), reflectionTexture->GetShaderResourceView(), mainCamera.GetPosition(), dLight1.Direction);
 

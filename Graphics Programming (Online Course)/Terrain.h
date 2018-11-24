@@ -38,7 +38,7 @@ public:
 	Mesh* GetMesh();
 	
 	void Initialize();
-	void Render(ID3D11DeviceContext* context, bool terrainShader, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum);
+	void Render(ID3D11DeviceContext* context, bool terrainShader, XMFLOAT3 cameraPosition, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum);
 	void DrawTerrainEditor();
 
 private:
@@ -53,8 +53,11 @@ private:
 	{
 		XMFLOAT4 ambientColor;
 		XMFLOAT4 diffuseColor;
+		XMFLOAT4 fogColor;
+		XMFLOAT3 cameraPosition;
+		float fogStart;
 		XMFLOAT3 lightDirection;
-		float padding;
+		float fogRange;
 	};
 
 	bool frustumCulling;
@@ -107,6 +110,6 @@ private:
 	void InitializeTerraincCells(Vertex* terrainVertices);
 
 	void InitializeShaders();
-	void SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection);
+	void SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT3 cameraPosition, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection);
 };
 

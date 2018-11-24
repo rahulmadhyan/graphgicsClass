@@ -5,20 +5,24 @@ Texture2D rockTexture		: register(t2);
 Texture2D normalTexture		: register(t3);
 SamplerState SampleType;
 
-cbuffer LightBuffer
+cbuffer LightBuffer : register(b0)
 {
 	float4 ambientColor;
 	float4 diffuseColor;
+	float4 fogColor;
+	float3 cameraPosition;
+	float fogStart;
 	float3 lightDirection;
-	float padding;
+	float fogRange;
 };
 
 struct PixelInputType
 {
-	float4 position : SV_POSITION;
-	float2 tex		: TEXCOORD;
-	float3 normal	: NORMAL;
-	float3 tangent	: TANGENT;
+	float4 position		: SV_POSITION;
+	float3 positionW	: POSITION;
+	float2 tex			: TEXCOORD;
+	float3 normal		: NORMAL;
+	float3 tangent		: TANGENT;
 };
 
 float4 main(PixelInputType input) : SV_TARGET
@@ -62,6 +66,16 @@ float4 main(PixelInputType input) : SV_TARGET
 
 	// Multiply the texture color and the final light color to get the result.
 	color = color * textureColor;
+
+	// Vector from point being lit to eye. 
+	float3 toCamera = cameraPosition - input.positionW;
+	float distanceToCamera = length(toCamera);
+
+	float fogAmount;
+#ifdef FOG
+	fogAmount = saturate((distanceToCamera - fogStart) / fogRange);
+	color = lerp(color, fogColor, fogAmount);
+#endif
 
 	return color;
 }
