@@ -187,11 +187,7 @@ void Game::Update(float deltaTime, float totalTime)
 	mainCamera.Update(deltaTime, totalTime);
 	frustum->ConstructFrustum(mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
 	
-	water->Update();
-
-	RenderRefraction();
-
-	RenderReflection();
+	water->Update(deltaTime);
 }
 
 // --------------------------------------------------------
@@ -211,6 +207,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
 		1.0f,
 		0);
+
+	RenderRefraction();
+
+	RenderReflection();
 
 	skybox->Render(context, mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
 

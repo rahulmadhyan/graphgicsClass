@@ -15,7 +15,7 @@ public:
 	Mesh* GetMesh();
 
 	void Initialize(ID3D11Device* device, WCHAR* fileName);
-	void Update();
+	void Update(float deltaTime);
 	void RenderReflection(XMFLOAT3 cameraPosition, XMFLOAT3 cameraRotation);
 	void Render(ID3D11DeviceContext* context, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix,
 		XMFLOAT4X4 reflectionMatrix, ID3D11ShaderResourceView* refractionTexture,

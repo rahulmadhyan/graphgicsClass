@@ -92,9 +92,9 @@ void Water::Initialize(ID3D11Device* device, WCHAR* fileName)
 	InitializeShaders(device);
 }
 
-void Water::Update()
+void Water::Update(float deltaTime)
 {
-	waterTranslation += 0.0003f;
+	waterTranslation += 0.3f * deltaTime;
 	if (waterTranslation > 1.0f)
 	{
 		waterTranslation -= 1.0f;
