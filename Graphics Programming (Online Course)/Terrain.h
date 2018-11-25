@@ -5,6 +5,7 @@
 #include <vector>
 #include <WICTextureLoader.h>
 #include <DDSTextureLoader.h>
+#include <thread>
 #include "Mesh.h"
 #include "Lights.h"
 #include "PerlinNoise.h"
@@ -28,7 +29,7 @@ class Terrain
 {
 public:
 	Terrain(char* fileName, ID3D11Device* device, ID3D11DeviceContext* context);
-	Terrain(bool frustumCulling, int terrainSize, float persistence, float frequency, float amplitude, float smoothing, int octaves, int randomSeed, ID3D11Device* device, ID3D11DeviceContext* context);
+	Terrain(bool frustumCulling, int terrainSize, float persistence, float frequency, float amplitude, float smoothing, int octaves, ID3D11Device* device, ID3D11DeviceContext* context);
 	~Terrain();
 
 	int GetTerrainCellCount();
@@ -67,7 +68,6 @@ private:
 
 	HeightMapInfo hmInfo;
 	int octaves;
-	int randomSeed;
 	float persistence;
 	float frequency;
 	float amplitude;

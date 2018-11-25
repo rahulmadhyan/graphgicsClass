@@ -78,9 +78,9 @@ void Game::Init()
 	dLight.DiffuseColor = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 	dLight.Direction = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
-	dLight1.AmbientColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	dLight1.DiffuseColor = XMFLOAT4(1.0f, 1.0f,	0.75f, 1.0f);
-	dLight1.Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);
+	dLight1.AmbientColor = XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f);
+	dLight1.DiffuseColor = XMFLOAT4(0.8f, 0.8f,	0.8f, 1.0f);
+	dLight1.Direction = XMFLOAT3(0.0f, -1.0f, 1.0f);
 }
 
 // --------------------------------------------------------
@@ -89,7 +89,7 @@ void Game::Init()
 void Game::CreateBasicGeometry()
 {
 	//gameTerrain = new Terrain("Resources/HeightMaps/demo.png", device);
-	gameTerrain = new Terrain(false, 256, 3.0, 0.01, 7.0, 2.5, 4, 2018, device, context);
+	gameTerrain = new Terrain(false, 256, 3.0, 0.01, 7.0, 2.5, 4, device, context);
 	gameTerrain->Initialize();
 
 	terrainEntity = new GameEntity(gameTerrain->GetMesh(), NULL);
@@ -112,7 +112,7 @@ void Game::CreateBasicGeometry()
 	reflection = new Reflection();
 	reflection->Initialize(device);
 
-	water = new Water(25.0f, 75.0f, 0.1f, 200.0f, XMFLOAT2(0.1f, 0.2f), XMFLOAT4(0.0f, 0.8f, 1.0f, 1.0f));
+	water = new Water(25.0f, 75.0f, 0.1f, 200.0f, XMFLOAT2(0.1f, 0.2f), XMFLOAT4(0.0f, 0.3f, 0.5f, 0.5f));
 	water->Initialize(device, L"Resources/Textures/WaterNormal.dds");
 	waterEntity = new GameEntity(water->GetMesh(), NULL);
 	waterEntity->SetTranslation(0.0f, 25.0f, 30.0f);

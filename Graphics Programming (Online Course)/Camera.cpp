@@ -82,7 +82,7 @@ void Camera::Update(float deltaTime, float totalTime)
 
 	XMVECTOR lrVector = XMVector3Cross(newDirection, up);
 	
-	float moveRate = 2.0f;
+	float moveRate = 10.0f;
 
 	if (GetAsyncKeyState('W') & 0x8000)
 	{
@@ -131,9 +131,11 @@ void Camera::DrawCameraEditor()
 
 	ImGui::SetWindowCollapsed(0, 2);
 	ImGui::SetWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
-	ImGui::SetWindowSize(ImVec2(400.0f, 100.0f), ImGuiCond_Always);
+	ImGui::SetWindowSize(ImVec2(400.0f, 125.0f), ImGuiCond_Always);
 	float position[3] = { this->position.x, this->position.y, this->position.z };
 	float rotation[2] = { xRotation, yRotation };
+
+	ImGui::Text("Camera keyboard input: W, A, S, D, X, Space");
 
 	ImGui::Text("Camera Position");
 	ImGui::SameLine();
@@ -178,7 +180,7 @@ void Camera::SetProjectionMatrix(unsigned int newWidth, unsigned int newHeight)
 
 void Camera::ResetCamera()
 {
-	XMVECTOR pos = XMVectorSet(-30, 30, -25, 0);
+	XMVECTOR pos = XMVectorSet(-40, 40, -45, 0);
 	XMStoreFloat3(&position, pos);
 	xRotation = 0.07f;
 	yRotation = 0.48f;
