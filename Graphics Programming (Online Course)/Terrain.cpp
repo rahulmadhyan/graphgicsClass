@@ -15,7 +15,7 @@ Terrain::Terrain(char *fileName, ID3D11Device* device, ID3D11DeviceContext* cont
 	delete imageData;
 }
 
-Terrain::Terrain(bool frustumCulling, int terrainSize, float persistence, float frequency, float amplitude, float smoothing, int octaves, int randomSeed, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename, ID3D11Device* device, ID3D11DeviceContext* context) : device(device), context(context),
+Terrain::Terrain(bool frustumCulling, int terrainSize, float persistence, float frequency, float amplitude, float smoothing, int octaves, int randomSeed, ID3D11Device* device, ID3D11DeviceContext* context) : device(device), context(context),
 																																																																																	frustumCulling(frustumCulling),
 																																																																																	persistence(persistence),
 																																																																																	frequency(frequency),
@@ -42,7 +42,7 @@ Terrain::Terrain(bool frustumCulling, int terrainSize, float persistence, float 
 
 	terrainMesh = 0;
 
-	LoadTextures(grassTextureFilename, slopeTextureFilename, rockTextureFilename, normalTextureFilename);
+	LoadTextures();
 
 	hmInfo.terrainSize = terrainSize;
 
@@ -128,6 +128,11 @@ Terrain::~Terrain()
 		rockTexture->Release();
 	}
 
+	if (snowTexture)
+	{
+		snowTexture->Release();
+	}
+
 	if (normalTexture)
 	{
 		normalTexture->Release();
@@ -141,17 +146,17 @@ int Terrain::GetTerrainCellCount()
 
 ID3D11ShaderResourceView* Terrain::GetColorTexture1()
 {
-	return grassTexture;
+	return terrainTexture1;
 }
 
 ID3D11ShaderResourceView* Terrain::GetColorTexture2()
 {
-	return slopeTexture;
+	return terrainTexture2;
 }
 
 ID3D11ShaderResourceView* Terrain::GetColorTexture3()
 {
-	return rockTexture;
+	return terrainTexture3;
 }
 
 Mesh* Terrain::GetMesh()
@@ -265,50 +270,6 @@ void Terrain::Render(ID3D11DeviceContext* context, bool terrainShader, XMFLOAT3 
 	
 	if(terrainShader)
 		DrawTerrainEditor();
-}
-
-void Terrain::DrawTerrainEditor()
-{
-	ImGui::Begin("Terrain Editor", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);  
-
-	ImGui::SetWindowCollapsed(0, ImGuiCond_Once);
-	ImGui::SetWindowSize(ImVec2(500.0f, 200.0f), ImGuiCond_Always);
-	
-	ImGui::PushItemWidth(300.0f);
-	ImGui::Text("Terran Size         ");
-	ImGui::SameLine();
-	ImGui::SliderInt("##TerrainSize", &hmInfo.terrainSize, 0, 512);
-
-	ImGui::Text("Terran Frequency    ");
-	ImGui::SameLine();
-	ImGui::SliderFloat("##TerrainFrequency", &frequency, 0.0f, 0.1f);
-
-	ImGui::Text("Terran Persistence  ");
-	ImGui::SameLine();
-	ImGui::SliderFloat("##TerrainPersistence", &persistence, 0.0f, 10.0);
-
-	ImGui::Text("Terran Amplitude    ");
-	ImGui::SameLine();
-	ImGui::SliderFloat("##TerrainAmplitude", &amplitude, 0.0f, 20.0);
-
-	ImGui::Text("Terran Smoothing    ");
-	ImGui::SameLine();
-	ImGui::SliderFloat("##TerrainSmoothing", &smoothing, 0.0f, 10.0);
-
-	ImGui::Text("Terran Octaves      ");
-	ImGui::SameLine();
-	ImGui::SliderInt("##TerrainOctaves", &octaves, 0.0f, 10.0);
-
-	ImGui::NewLine();
-	ImGui::SameLine(ImGui::GetWindowWidth() * 0.5f);
-	if (ImGui::Button("Generate"))
-	{
-		GenerateRandomHeightMap();
-		Initialize();
-	}
-
-	ImGui::PopItemWidth();
-	ImGui::End();
 }
 
 DXGI_FORMAT Terrain::GetDXGIFormatFromWICFormat(WICPixelFormatGUID& wicFormatGUID)
@@ -686,12 +647,17 @@ void Terrain::CalculateTextureCoordinates()
 	}
 }
 
-void Terrain::LoadTextures(WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename)
+void Terrain::LoadTextures()
 {
-	CreateWICTextureFromFile(device, context, grassTextureFilename, 0, &grassTexture);
-	CreateWICTextureFromFile(device, context, slopeTextureFilename, 0, &slopeTexture);
-	CreateWICTextureFromFile(device, context, rockTextureFilename, 0, &rockTexture);
-	CreateDDSTextureFromFile(device, context, normalTextureFilename, 0, &normalTexture);
+	CreateWICTextureFromFile(device, context, L"Resources/Textures/grass.jpg", 0, &grassTexture);
+	CreateWICTextureFromFile(device, context, L"Resources/Textures/dirt.jpg", 0, &slopeTexture);
+	CreateWICTextureFromFile(device, context, L"Resources/Textures/rock.jpg", 0, &rockTexture);
+	CreateWICTextureFromFile(device, context, L"Resources/Textures/snow.jpg", 0, &snowTexture);
+	CreateDDSTextureFromFile(device, context, L"Resources/Textures/TerrainNormal.dds", 0, &normalTexture);
+
+	terrainTexture1 = grassTexture;
+	terrainTexture2 = slopeTexture;
+	terrainTexture3 = rockTexture;
 }
 
 void Terrain::InitializeBuffers()
@@ -1035,7 +1001,7 @@ void Terrain::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT3 cameraP
 	// Copy the lighting variables into the constant buffer.
 	dataPtr2->ambientColor = ambientColor;
 	dataPtr2->diffuseColor = diffuseColor;
-	dataPtr2->fogColor = XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f);
+	dataPtr2->fogColor = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
 	dataPtr2->cameraPosition = cameraPosition;
 	dataPtr2->lightDirection = lightDirection;
 	dataPtr2->fogStart = 25.0f;
@@ -1051,8 +1017,131 @@ void Terrain::SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT3 cameraP
 	context->PSSetConstantBuffers(bufferNumber, 1, &lightBuffer);
 
 	// Set shader texture resources in the pixel shader.
-	context->PSSetShaderResources(0, 1, &grassTexture);
-	context->PSSetShaderResources(1, 1, &slopeTexture);
-	context->PSSetShaderResources(2, 1, &rockTexture);
+	context->PSSetShaderResources(0, 1, &terrainTexture1);
+	context->PSSetShaderResources(1, 1, &terrainTexture2);
+	context->PSSetShaderResources(2, 1, &terrainTexture3);
 	context->PSSetShaderResources(3, 1, &normalTexture);
+}
+
+void Terrain::DrawTerrainEditor()
+{
+	ImGui::Begin("Terrain Editor", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+
+	ImGui::SetWindowCollapsed(0, ImGuiCond_Once);
+	ImGui::SetWindowSize(ImVec2(450.0f, 450.0f), ImGuiCond_Always);
+
+	ImGui::PushItemWidth(300.0f);
+	ImGui::Text("Terran Size         ");
+	ImGui::SameLine();
+	ImGui::SliderInt("##TerrainSize", &hmInfo.terrainSize, 0, 512);
+
+	ImGui::Text("Terran Frequency    ");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##TerrainFrequency", &frequency, 0.0f, 0.1f);
+
+	ImGui::Text("Terran Persistence  ");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##TerrainPersistence", &persistence, 0.0f, 10.0);
+
+	ImGui::Text("Terran Amplitude    ");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##TerrainAmplitude", &amplitude, 0.0f, 20.0);
+
+	ImGui::Text("Terran Smoothing    ");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##TerrainSmoothing", &smoothing, 0.0f, 10.0);
+
+	ImGui::Text("Terran Octaves      ");
+	ImGui::SameLine();
+	ImGui::SliderInt("##TerrainOctaves", &octaves, 0.0f, 10.0);
+
+	ImGui::NewLine();
+	ImGui::SameLine(ImGui::GetWindowWidth() * 0.5f);
+	if (ImGui::Button("Generate"))
+	{
+		GenerateRandomHeightMap();
+		Initialize();
+	}
+
+	ImGui::NewLine();
+	
+	ImGui::Text("Select Terrain Texture 1");
+	ImGui::PushID(0);
+	if (ImGui::ImageButton(grassTexture, ImVec2(32, 32), ImVec2(0, 0), ImVec2(1, 1)))
+		terrainTexture1 = grassTexture;
+	ImGui::PopID();
+	ImGui::SameLine();
+
+	ImGui::PushID(1);
+	if (ImGui::ImageButton(slopeTexture, ImVec2(32, 32)))
+		terrainTexture1 = slopeTexture;
+	ImGui::PopID();
+	ImGui::SameLine();
+
+	ImGui::PushID(2);
+	if (ImGui::ImageButton(rockTexture, ImVec2(32, 32)))
+		terrainTexture1 = rockTexture;
+	ImGui::PopID();
+	ImGui::SameLine();
+
+	ImGui::PushID(3);
+	if (ImGui::ImageButton(snowTexture, ImVec2(32, 32)))
+		terrainTexture1 = snowTexture;
+	ImGui::PopID();
+
+	ImGui::NewLine();
+
+	ImGui::Text("Select Terrain Texture 2");
+	ImGui::PushID(4);
+	if (ImGui::ImageButton(grassTexture, ImVec2(32, 32), ImVec2(0, 0), ImVec2(1, 1)))
+		terrainTexture2 = grassTexture;
+	ImGui::PopID();
+	ImGui::SameLine();
+
+	ImGui::PushID(5);
+	if (ImGui::ImageButton(slopeTexture, ImVec2(32, 32)))
+		terrainTexture2 = slopeTexture;
+	ImGui::PopID();
+	ImGui::SameLine();
+
+	ImGui::PushID(6);
+	if (ImGui::ImageButton(rockTexture, ImVec2(32, 32)))
+		terrainTexture2 = rockTexture;
+	ImGui::PopID();
+	ImGui::SameLine();
+
+	ImGui::PushID(7);
+	if (ImGui::ImageButton(snowTexture, ImVec2(32, 32)))
+		terrainTexture2 = snowTexture;
+	ImGui::PopID();
+	ImGui::SameLine();
+
+	ImGui::NewLine();
+
+	ImGui::Text("Select Terrain Texture 3");
+	ImGui::PushID(8);
+	if (ImGui::ImageButton(grassTexture, ImVec2(32, 32), ImVec2(0, 0), ImVec2(1, 1)))
+		terrainTexture3 = grassTexture;
+	ImGui::PopID();
+	ImGui::SameLine();
+
+	ImGui::PushID(9);
+	if (ImGui::ImageButton(slopeTexture, ImVec2(32, 32)))
+		terrainTexture3 = slopeTexture;
+	ImGui::PopID();
+	ImGui::SameLine();
+
+	ImGui::PushID(10);
+	if (ImGui::ImageButton(rockTexture, ImVec2(32, 32)))
+		terrainTexture3 = rockTexture;
+	ImGui::PopID();
+	ImGui::SameLine();
+
+	ImGui::PushID(11);
+	if (ImGui::ImageButton(snowTexture, ImVec2(32, 32)))
+		terrainTexture3 = snowTexture;
+	ImGui::PopID();
+
+	ImGui::PopItemWidth();
+	ImGui::End();
 }

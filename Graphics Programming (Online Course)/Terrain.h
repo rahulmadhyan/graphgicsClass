@@ -1,5 +1,6 @@
 #pragma once
 #include "stdafx.h"
+#include <wrl.h>
 #include <wincodec.h>  
 #include <vector>
 #include <WICTextureLoader.h>
@@ -11,8 +12,9 @@
 #include "FrustumCulling.h"
 
 using namespace DirectX;
+using Microsoft::WRL::ComPtr;
 
-const int TEXTURE_REPEAT = 32;
+const int TEXTURE_REPEAT = 16;
 
 struct HeightMapInfo
 {
@@ -26,7 +28,7 @@ class Terrain
 {
 public:
 	Terrain(char* fileName, ID3D11Device* device, ID3D11DeviceContext* context);
-	Terrain(bool frustumCulling, int terrainSize, float persistence, float frequency, float amplitude, float smoothing, int octaves, int randomSeed, WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename, ID3D11Device* device, ID3D11DeviceContext* context);
+	Terrain(bool frustumCulling, int terrainSize, float persistence, float frequency, float amplitude, float smoothing, int octaves, int randomSeed, ID3D11Device* device, ID3D11DeviceContext* context);
 	~Terrain();
 
 	int GetTerrainCellCount();
@@ -39,8 +41,7 @@ public:
 	
 	void Initialize();
 	void Render(ID3D11DeviceContext* context, bool terrainShader, XMFLOAT3 cameraPosition, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, DirectionalLight dLight, FrustumCulling* frustum);
-	void DrawTerrainEditor();
-
+	
 private:
 	struct MatrixBufferType
 	{
@@ -83,7 +84,12 @@ private:
 	ID3D11ShaderResourceView* grassTexture;
 	ID3D11ShaderResourceView* slopeTexture;
 	ID3D11ShaderResourceView* rockTexture;
+	ID3D11ShaderResourceView* snowTexture;
 	ID3D11ShaderResourceView* normalTexture;
+
+	ID3D11ShaderResourceView* terrainTexture1;
+	ID3D11ShaderResourceView* terrainTexture2;
+	ID3D11ShaderResourceView* terrainTexture3;
 
 	ID3D11VertexShader* vertexShader;
 	ID3D11PixelShader* pixelShader;
@@ -105,11 +111,13 @@ private:
 	
 	void CalulateNormals();
 	void CalculateTextureCoordinates();
-	void LoadTextures(WCHAR* grassTextureFilename, WCHAR* slopeTextureFilename, WCHAR* rockTextureFilename, WCHAR* normalTextureFilename);
+	void LoadTextures();
 	void InitializeBuffers();
 	void InitializeTerraincCells(Vertex* terrainVertices);
 
 	void InitializeShaders();
 	void SetShaderParameters(ID3D11DeviceContext* context, XMFLOAT3 cameraPosition, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix, XMFLOAT4 ambientColor, XMFLOAT4 diffuseColor, XMFLOAT3 lightDirection);
+
+	void DrawTerrainEditor();
 };
 

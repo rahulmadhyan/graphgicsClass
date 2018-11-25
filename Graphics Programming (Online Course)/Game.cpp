@@ -89,7 +89,7 @@ void Game::Init()
 void Game::CreateBasicGeometry()
 {
 	//gameTerrain = new Terrain("Resources/HeightMaps/demo.png", device);
-	gameTerrain = new Terrain(false, 256, 3.0, 0.01, 7.0, 2.5, 4, 2018, L"Resources/Textures/grass1.jpg", L"Resources/Textures/dirt1.jpg", L"Resources/Textures/rock1.jpg", L"Resources/Textures/TerrainNormal.dds", device, context);
+	gameTerrain = new Terrain(false, 256, 3.0, 0.01, 7.0, 2.5, 4, 2018, device, context);
 	gameTerrain->Initialize();
 
 	terrainEntity = new GameEntity(gameTerrain->GetMesh(), NULL);
