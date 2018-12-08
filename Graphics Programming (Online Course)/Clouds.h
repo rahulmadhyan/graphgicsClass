@@ -22,7 +22,7 @@ private:
 
 	struct CloudBufferType
 	{
-		XMFLOAT4 fogColor;
+		XMFLOAT4 fogColor;                 
 		XMFLOAT3 cameraPosition;
 		float deltaTime;
 		XMFLOAT3 AABBMin;
@@ -31,15 +31,23 @@ private:
 		float densityScale;
 		float densityBias;
 		float densityCutoff;
+		float shadowSampleOffset;
 		int rayMarchSamples;
 		int maxRayMarchSamples;
+		int shadowSampleCount;
+		int shadowScale;
+		float pad;
 	};
 
+	
 	int rayMarchSamples;
 	int maxRayMarchSamples;
+	int shadowSampleCount;
+	int shadowScale;
 	float densityScale;
 	float densityBias;
 	float densityCutoff;
+	float shadowSampleOffset;
 	float volumeSamplingScale;
 	XMFLOAT3 AABBMin;
 	XMFLOAT3 AABBMax;

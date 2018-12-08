@@ -1,14 +1,15 @@
 
-float SampleShadowAmount(int numSamples, float3 pos, float3 lightDir, float stepAdjust, sampler3D volume, float scale, float bias, float fade, float cutoff)
+float SampleShadowAmount(int numSamples, float3 pos, float3 lightDir, float stepAdjust, Texture3D volume, SamplerState basicSampler, float scale, float bias, float fade, float cutoff)
 {
 	float shadowAmount = 0;
 	float step = 1.0f / numSamples * stepAdjust;
 	float3 stepDir = lightDir * step;
 
-	for (int i = 0; i < numSamples; i++)
+	[unroll]
+	for (int i = 0; i < 5; i++)
 	{
 		pos += stepDir;
-		float shadowSample = (SampleLevel(volume, float4(pos, 0)).r * scale + bias) * fade;
+		float shadowSample = (volume.Sample(basicSampler, float4(pos, 0)).r * scale + bias) * fade;
 		shadowSample = max(shadowSample, 0.0f); // No negative
 		shadowAmount += lerp(0.0f, shadowSample, shadowSample >= cutoff); // Make sure it makes the cut
 	}
@@ -30,78 +31,78 @@ float FadeNearUVEdge(float3 uv)
 	return min(min(fadePos.x, fadePos.y), fadePos.z);
 }
 
-float NoiseFromTexture2D(float3 x, sampler2D tex)
-{
-	float3 p = floor(x);
-	float3 f = frac(x);
-	f = f * f * (3.0f - 2.0f * f);
-
-	float2 uv = (p.xy + float2(37.0f, 17.0f) * p.z) + f.xy;
-	float2 rg = SampleLevel(tex, float4((uv + 0.5f) / 1024.0f, 0, 0)).yx;
-
-	return lerp(rg.x, rg.y, f.z) * 2.0f - 1.0f;
-}
-
-
-float Noise5(float3 p, float time, sampler2D tex)
-{
-	float3 q = p - float3(0.0, 0.1, 1.0) * time;
-
-	float f;
-	f = 0.500000f * NoiseFromTexture2D(q, tex); q = q * 2.02;
-	f += 0.25000f * NoiseFromTexture2D(q, tex); q = q * 2.03;
-	f += 0.12500f * NoiseFromTexture2D(q, tex); q = q * 2.01;
-	f += 0.06250f * NoiseFromTexture2D(q, tex); q = q * 2.02;
-	f += 0.03125f * NoiseFromTexture2D(q, tex);
-
-	return saturate(f);
-}
-
-float Noise4(float3 p, float time, sampler2D tex)
-{
-	float3 q = p - float3(0.0, 0.1, 1.0) * time;
-
-	float f;
-	f = 0.500000f * NoiseFromTexture2D(q, tex); q = q * 2.02;
-	f += 0.25000f * NoiseFromTexture2D(q, tex); q = q * 2.03;
-	f += 0.12500f * NoiseFromTexture2D(q, tex); q = q * 2.01;
-	f += 0.06250f * NoiseFromTexture2D(q, tex);
-
-	return saturate(f);
-}
-
-float Noise3(float3 p, float time, sampler2D tex)
-{
-	float3 q = p - float3(0.0, 0.1, 1.0) * time;
-
-	float f;
-	f = 0.500000f * NoiseFromTexture2D(q, tex); q = q * 2.02;
-	f += 0.25000f * NoiseFromTexture2D(q, tex); q = q * 2.03;
-	f += 0.12500f * NoiseFromTexture2D(q, tex);
-
-	return saturate(f);
-}
-
-float Noise2(float3 p, float time, sampler2D tex)
-{
-	float3 q = p - float3(0.0, 0.1, 1.0) * time;
-
-	float f;
-	f = 0.500000f * NoiseFromTexture2D(q, tex); q = q * 2.02;
-	f += 0.25000f * NoiseFromTexture2D(q, tex);
-
-	return saturate(f);
-}
-
-float NoiseLOD(float3 p, float time, sampler2D tex, int iteration)
-{
-	float result = 0;
-	if (iteration < 50)			result = Noise5(p, time, tex);
-	else if (iteration < 75)	result = Noise4(p, time, tex);
-	else if (iteration < 100)	result = Noise3(p, time, tex);
-	else						result = Noise2(p, time, tex);
-	return result;
-}
+//float NoiseFromTexture2D(float3 x, sampler2D tex)
+//{
+//	float3 p = floor(x);
+//	float3 f = frac(x);
+//	f = f * f * (3.0f - 2.0f * f);
+//
+//	float2 uv = (p.xy + float2(37.0f, 17.0f) * p.z) + f.xy;
+//	float2 rg = SampleLevel(tex, float4((uv + 0.5f) / 1024.0f, 0, 0)).yx;
+//
+//	return lerp(rg.x, rg.y, f.z) * 2.0f - 1.0f;
+//}
+//
+//
+//float Noise5(float3 p, float time, sampler2D tex)
+//{
+//	float3 q = p - float3(0.0, 0.1, 1.0) * time;
+//
+//	float f;
+//	f = 0.500000f * NoiseFromTexture2D(q, tex); q = q * 2.02;
+//	f += 0.25000f * NoiseFromTexture2D(q, tex); q = q * 2.03;
+//	f += 0.12500f * NoiseFromTexture2D(q, tex); q = q * 2.01;
+//	f += 0.06250f * NoiseFromTexture2D(q, tex); q = q * 2.02;
+//	f += 0.03125f * NoiseFromTexture2D(q, tex);
+//
+//	return saturate(f);
+//}
+//
+//float Noise4(float3 p, float time, sampler2D tex)
+//{
+//	float3 q = p - float3(0.0, 0.1, 1.0) * time;
+//
+//	float f;
+//	f = 0.500000f * NoiseFromTexture2D(q, tex); q = q * 2.02;
+//	f += 0.25000f * NoiseFromTexture2D(q, tex); q = q * 2.03;
+//	f += 0.12500f * NoiseFromTexture2D(q, tex); q = q * 2.01;
+//	f += 0.06250f * NoiseFromTexture2D(q, tex);
+//
+//	return saturate(f);
+//}
+//
+//float Noise3(float3 p, float time, sampler2D tex)
+//{
+//	float3 q = p - float3(0.0, 0.1, 1.0) * time;
+//
+//	float f;
+//	f = 0.500000f * NoiseFromTexture2D(q, tex); q = q * 2.02;
+//	f += 0.25000f * NoiseFromTexture2D(q, tex); q = q * 2.03;
+//	f += 0.12500f * NoiseFromTexture2D(q, tex);
+//
+//	return saturate(f);
+//}
+//
+//float Noise2(float3 p, float time, sampler2D tex)
+//{
+//	float3 q = p - float3(0.0, 0.1, 1.0) * time;
+//
+//	float f;
+//	f = 0.500000f * NoiseFromTexture2D(q, tex); q = q * 2.02;
+//	f += 0.25000f * NoiseFromTexture2D(q, tex);
+//
+//	return saturate(f);
+//}
+//
+//float NoiseLOD(float3 p, float time, sampler2D tex, int iteration)
+//{
+//	float result = 0;
+//	if (iteration < 50)			result = Noise5(p, time, tex);
+//	else if (iteration < 75)	result = Noise4(p, time, tex);
+//	else if (iteration < 100)	result = Noise3(p, time, tex);
+//	else						result = Noise2(p, time, tex);
+//	return result;
+//}
 
 
 

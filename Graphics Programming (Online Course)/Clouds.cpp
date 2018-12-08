@@ -10,10 +10,14 @@ Clouds::Clouds(ID3D11Device* device, ID3D11DeviceContext* context) : device(devi
 {
 	rayMarchSamples = 0;
 	maxRayMarchSamples = 0;
+	shadowSampleCount = 0;
+	shadowScale = 0;
 	densityScale = 0.0f;
 	densityBias = 0.0f;
 	densityCutoff = 0.0f;
+	shadowSampleOffset = 0.0f; 
 	volumeSamplingScale = 0.0f;
+
 	AABBMin = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	AABBMax = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	fogColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -92,17 +96,20 @@ void Clouds::SetShaderParameters(float deltaTime, XMFLOAT3 cameraPosition, XMFLO
 
 	dataPtr2 = (CloudBufferType*)mappedResource.pData;
 
-	dataPtr2->fogColor = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
-	dataPtr2->cameraPosition;
-	dataPtr2->deltaTime;
-	dataPtr2->AABBMin = XMFLOAT3(1.0f, 1.0f, 1.0f);
-	dataPtr2->volumeSamplingScale = 1.0f;
-	dataPtr2->AABBMax = XMFLOAT3(100.0f, 100.0f, 100.0f);
-	dataPtr2->densityScale = 1.0f;
-	dataPtr2->densityBias = 1.0f;
-	dataPtr2->densityCutoff = 1.0f;
-	dataPtr2->rayMarchSamples = 0;
-	dataPtr2->maxRayMarchSamples = 64;
+	dataPtr2->fogColor = fogColor;
+	dataPtr2->cameraPosition = cameraPosition;
+	dataPtr2->deltaTime = deltaTime;
+	dataPtr2->AABBMin = AABBMin;
+	dataPtr2->volumeSamplingScale = volumeSamplingScale;
+	dataPtr2->AABBMax = AABBMax;
+	dataPtr2->densityScale = densityScale;
+	dataPtr2->densityBias = densityBias;
+	dataPtr2->densityCutoff = densityCutoff;
+	dataPtr2->shadowSampleOffset = shadowSampleOffset;
+	dataPtr2->rayMarchSamples = rayMarchSamples;
+	dataPtr2->maxRayMarchSamples = maxRayMarchSamples;
+	dataPtr2->shadowSampleCount = shadowSampleCount;
+	dataPtr2->shadowScale = shadowScale;
 
 	context->Unmap(cloudBuffer, 0);
 
@@ -134,9 +141,15 @@ void Clouds::InitializeShaders()
 	vertexShaderBuffer = 0;
 	pixelShaderBuffer = 0;
 
+	const D3D_SHADER_MACRO defines[] =
+	{
+		"UNIFORM_SAMPLE_STEP", "1",
+		NULL, NULL
+	};
+
 	result = D3DCompileFromFile(L"Resources/Shaders/CloudVertexShader.hlsl", NULL, NULL, "main", "vs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &vertexShaderBuffer, &error);
 
-	result = D3DCompileFromFile(L"Resources/Shaders/CloudPixelShader.hlsl", NULL, NULL, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pixelShaderBuffer, &error);
+	result = D3DCompileFromFile(L"Resources/Shaders/CloudPixelShader.hlsl", defines, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &pixelShaderBuffer, &error);
 
 	if (error != nullptr)
 		OutputDebugStringA((char*)error->GetBufferPointer());
@@ -293,7 +306,7 @@ void Clouds::InitializeTexture()
 
 		UINT index = 0;
 
-		float fade = 0.3f;
+		float fade = 0.5f;
 
 		for (size_t depth = 0; depth < cloudTextureDescription.Depth; depth++)
 		{
@@ -301,7 +314,7 @@ void Clouds::InitializeTexture()
 			{
 				for (size_t width = 0; width < cloudTextureDescription.Width; width++)
 				{
-					textureData[index++] = XMFLOAT4(fade, fade, fade, 1.0f);
+					textureData[index++] = XMFLOAT4(fade, fade, fade, fade);
 				}
 			}
 		}
@@ -329,21 +342,33 @@ void Clouds::DrawCloudEditor()
 	ImGui::SameLine();
 	ImGui::SliderInt("##MaxRayMarchSamples", &maxRayMarchSamples, 0, 100);
 
+	ImGui::Text("Shadow Sample Count  ");
+	ImGui::SameLine();
+	ImGui::SliderInt("##ShadowSampleCount", &shadowSampleCount, 0, 100);
+
+	ImGui::Text("Shadow Scale         ");
+	ImGui::SameLine();
+	ImGui::SliderInt("##ShadowScale", &shadowScale, 0, 100);
+
 	ImGui::Text("Density Scale        ");
 	ImGui::SameLine();
-	ImGui::SliderFloat("##DensityScale", &densityScale, 0, 10.0f);
-
+	ImGui::SliderFloat("##DensityScale", &densityScale, 0, 20.0f);
+	
 	ImGui::Text("Density Bias         ");
 	ImGui::SameLine();
-	ImGui::SliderFloat("##DensityBias", &densityBias, 0, 10.0f);
+	ImGui::SliderFloat("##DensityBias", &densityBias, 0, 20.0f);
 
 	ImGui::Text("Density Cutoff       ");
 	ImGui::SameLine();
-	ImGui::SliderFloat("##DensityCutoff", &densityCutoff, 0, 10.0f);
+	ImGui::SliderFloat("##DensityCutoff", &densityCutoff, 0, 20.0f);
+
+	ImGui::Text("Shadow Sample Offset ");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##ShadowSampleOffset", &shadowSampleOffset, 0, 20.0f);
 
 	ImGui::Text("Volume Sampling Scale");
 	ImGui::SameLine();
-	ImGui::SliderFloat("##VolumeSamplingScale", &volumeSamplingScale, 0, 10.0f);
+	ImGui::SliderFloat("##VolumeSamplingScale", &volumeSamplingScale, 0, 20.0f);
 
 	float aabbMin = AABBMin.x;
 	
@@ -360,6 +385,14 @@ void Clouds::DrawCloudEditor()
 	ImGui::SliderFloat("##AABBMax", &aabbMax, 0, 100.0f);
 
 	AABBMax = XMFLOAT3(aabbMax, aabbMax, aabbMax);
+
+	float fog[2] = { fogColor.x, fogColor.w };
+
+	ImGui::Text("Fog Color            ");
+	ImGui::SameLine();
+	ImGui::SliderFloat2("##Fog", fog, 0, 1.0f);
+
+	fogColor = XMFLOAT4(fog[0], fog[0], fog[0], fog[1]);
 
 	ImGui::PopItemWidth();
  	ImGui::End();
