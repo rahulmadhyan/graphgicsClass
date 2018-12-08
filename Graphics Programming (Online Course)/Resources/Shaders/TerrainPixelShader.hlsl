@@ -71,9 +71,8 @@ float4 main(PixelInputType input) : SV_TARGET
 	float3 toCamera = cameraPosition - input.positionW;
 	float distanceToCamera = length(toCamera);
 
-	float fogAmount;
-#ifdef FOG
-	fogAmount = saturate((distanceToCamera - fogStart) / fogRange);
+#if FOG
+	float fogAmount = saturate((distanceToCamera - fogStart) / fogRange);
 	color = lerp(color, fogColor, fogAmount);
 #endif
 

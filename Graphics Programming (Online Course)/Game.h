@@ -12,6 +12,7 @@
 #include "RenderTexture.h"
 #include "Reflection.h"
 #include "Water.h"
+#include "Clouds.h"
 #include "GUI.h"
 
 class Game 
@@ -49,6 +50,7 @@ private:
 
 	GameEntity* terrainEntity;
 	GameEntity* waterEntity;
+	GameEntity* cloudEntity;
 
 	//Terrain
 	Terrain* gameTerrain;
@@ -62,6 +64,9 @@ private:
 	RenderTexture* reflectionTexture;
 	Reflection* reflection;
 	Water* water;
+
+	//Clouds
+	Clouds* clouds;
 
 	//Main Camera
 	Camera mainCamera;

@@ -119,6 +119,13 @@ void Game::CreateBasicGeometry()
 	waterEntity->SetRotation(0.0f, 0.0f, 0.0f);
 	waterEntity->SetScale(0.1, 0.1f, 0.1f);
 	waterEntity->SetWorldMatrix();
+
+	clouds = new Clouds(device, context);
+	cloudEntity = new GameEntity(NULL, NULL);
+	cloudEntity->SetTranslation(0.0f, 50.0f, 30.0f);
+	cloudEntity->SetRotation(0.0f, 0.0f, 0.0f);
+	cloudEntity->SetScale(30.0f, 20.0f, 30.0f);
+	cloudEntity->SetWorldMatrix();
 }
 
 
@@ -217,11 +224,13 @@ void Game::Draw(float deltaTime, float totalTime)
 	gameTerrain->Render(context, true, mainCamera.GetPosition(), terrainEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), dLight1, frustum);
 	
 	water->Render(context, waterEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), water->GetReflectionMatrix(), refractionTexture->GetShaderResourceView(), reflectionTexture->GetShaderResourceView(), mainCamera.GetPosition(), dLight1.Direction);
+	
+	clouds->Render(deltaTime, mainCamera.GetPosition(), cloudEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
+
+	GUI::getInstance()->Draw();
 
 	ID3D11ShaderResourceView *const pSRV[16] = { NULL };
 	context->PSSetShaderResources(0, 16, pSRV);
-
-	GUI::getInstance()->Draw();
 
 	swapChain->Present(0, 0);
 }
