@@ -35,6 +35,16 @@ private:
 		int maxRayMarchSamples;
 	};
 
+	int rayMarchSamples;
+	int maxRayMarchSamples;
+	float densityScale;
+	float densityBias;
+	float densityCutoff;
+	float volumeSamplingScale;
+	XMFLOAT3 AABBMin;
+	XMFLOAT3 AABBMax;
+	XMFLOAT4 fogColor;
+	
 	ID3D11Device* device;
 	ID3D11DeviceContext* context;
 
@@ -59,5 +69,6 @@ private:
 	void InitializeShaders();
 	void InitializeTexture();
 	void SetShaderParameters(float deltaTime, XMFLOAT3 cameraPosition, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix);
+	void DrawCloudEditor();
 };
 

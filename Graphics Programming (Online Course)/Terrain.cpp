@@ -1150,6 +1150,8 @@ void Terrain::DrawTerrainEditor()
 		}
 	}
 
+	ImGui::SetWindowPos("Cloud Editor", ImVec2(0.0f, ImGui::GetWindowPos().y + ImGui::GetWindowHeight() + 5.0f));
+
 	ImGui::PopItemWidth();
 	ImGui::End();
 }

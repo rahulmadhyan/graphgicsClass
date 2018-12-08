@@ -129,7 +129,7 @@ void Camera::DrawCameraEditor()
 {
 	ImGui::Begin("Camera Editor", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
 
-	ImGui::SetWindowCollapsed(0, 2);
+	ImGui::SetWindowCollapsed(1, 2);
 	ImGui::SetWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
 	ImGui::SetWindowSize(ImVec2(400.0f, 125.0f), ImGuiCond_Always);
 	float position[3] = { this->position.x, this->position.y, this->position.z };

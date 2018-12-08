@@ -8,6 +8,16 @@ Clouds::Clouds()
 
 Clouds::Clouds(ID3D11Device* device, ID3D11DeviceContext* context) : device(device), context(context)
 {
+	rayMarchSamples = 0;
+	maxRayMarchSamples = 0;
+	densityScale = 0.0f;
+	densityBias = 0.0f;
+	densityCutoff = 0.0f;
+	volumeSamplingScale = 0.0f;
+	AABBMin = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	AABBMax = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	fogColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+
 	matrixBuffer = 0;
 	cloudBuffer = 0;
 
@@ -50,6 +60,8 @@ void Clouds::Render(float deltaTime, XMFLOAT3 cameraPosition, XMFLOAT4X4 worldMa
 	context->PSSetSamplers(0, 1, &sampler);
 
 	context->DrawIndexed(cloudMesh->GetIndexCount(), 0, 0);
+
+	DrawCloudEditor();
 }
 
 void Clouds::SetShaderParameters(float deltaTime, XMFLOAT3 cameraPosition, XMFLOAT4X4 worldMatrix, XMFLOAT4X4 viewMatrix, XMFLOAT4X4 projectionMatrix)
@@ -298,4 +310,57 @@ void Clouds::InitializeTexture()
 
 		device->CreateShaderResourceView(fadeTexture, 0, &fadeSRV);
 	}
+}
+
+void Clouds::DrawCloudEditor()
+{
+	ImGui::Begin("Cloud Editor", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+
+	ImGui::SetWindowCollapsed(1, ImGuiCond_Once);
+	ImGui::SetWindowSize(ImVec2(475.0f, 430.0f));
+	
+	ImGui::PushItemWidth(300.0f);
+
+	ImGui::Text("Ray March Samples    ");
+	ImGui::SameLine();
+	ImGui::SliderInt("##RayMarchSamples", &rayMarchSamples, 0, 100);
+
+	ImGui::Text("Max Ray March Samples");
+	ImGui::SameLine();
+	ImGui::SliderInt("##MaxRayMarchSamples", &maxRayMarchSamples, 0, 100);
+
+	ImGui::Text("Density Scale        ");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##DensityScale", &densityScale, 0, 10.0f);
+
+	ImGui::Text("Density Bias         ");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##DensityBias", &densityBias, 0, 10.0f);
+
+	ImGui::Text("Density Cutoff       ");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##DensityCutoff", &densityCutoff, 0, 10.0f);
+
+	ImGui::Text("Volume Sampling Scale");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##VolumeSamplingScale", &volumeSamplingScale, 0, 10.0f);
+
+	float aabbMin = AABBMin.x;
+	
+	ImGui::Text("AABB Min             ");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##AABBMin", &aabbMin, 0, 10.0f);
+
+	AABBMin = XMFLOAT3(aabbMin, aabbMin, aabbMin);
+
+	float aabbMax = AABBMax.x;
+
+	ImGui::Text("AABB Max             ");
+	ImGui::SameLine();
+	ImGui::SliderFloat("##AABBMax", &aabbMax, 0, 100.0f);
+
+	AABBMax = XMFLOAT3(aabbMax, aabbMax, aabbMax);
+
+	ImGui::PopItemWidth();
+ 	ImGui::End();
 }
