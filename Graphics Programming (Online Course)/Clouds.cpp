@@ -8,19 +8,19 @@ Clouds::Clouds()
 
 Clouds::Clouds(ID3D11Device* device, ID3D11DeviceContext* context) : device(device), context(context)
 {
-	rayMarchSamples = 0;
-	maxRayMarchSamples = 0;
+	rayMarchSamples = 200;
+	maxRayMarchSamples = 10;
 	shadowSampleCount = 0;
 	shadowScale = 0;
-	densityScale = 0.0f;
-	densityBias = 0.0f;
-	densityCutoff = 0.0f;
+	densityScale = 35.0f;
+	densityBias = 1.0f;
+	densityCutoff = 20.0f;
 	shadowSampleOffset = 0.0f; 
-	volumeSamplingScale = 0.0f;
+	volumeSamplingScale = 1.0f;
 
-	AABBMin = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	AABBMax = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	fogColor = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+	AABBMin = XMFLOAT3(-1.0f, -1.0f, -1.0f);
+	AABBMax = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	fogColor = XMFLOAT4(0.9f, 0.9f, 0.9f, 1.0f);
 
 	matrixBuffer = 0;
 	cloudBuffer = 0;
@@ -143,7 +143,7 @@ void Clouds::InitializeShaders()
 
 	const D3D_SHADER_MACRO defines[] =
 	{
-		"UNIFORM_SAMPLE_STEP", "1",
+		"UNIFORM_SAMPLE_STEP", "0",
 		NULL, NULL
 	};
 
@@ -284,8 +284,8 @@ void Clouds::InitializeTexture()
 			{
 				for (size_t width = 0; width < cloudTextureDescription.Width; width++)
 				{
-					float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-					textureData[index++] = XMFLOAT4(r, r, r, 1.0f);
+					float r = ((float) rand() / (RAND_MAX) * 0.4f) + 0.6f;
+					textureData[index++] = XMFLOAT4(r, 0, 0, 0);
 				}
 			}
 		}
@@ -305,16 +305,26 @@ void Clouds::InitializeTexture()
 		XMFLOAT4* textureData = (XMFLOAT4*)mapppedTextureSubresource.pData;
 
 		UINT index = 0;
-
-		float fade = 0.5f;
-
-		for (size_t depth = 0; depth < cloudTextureDescription.Depth; depth++)
+		
+		for (size_t depth = 0; depth < 64; depth++)
 		{
-			for (size_t height = 0; height < cloudTextureDescription.Height; height++)
+			for (size_t height = 0; height < 64; height++)
 			{
-				for (size_t width = 0; width < cloudTextureDescription.Width; width++)
+				for (size_t width = 0; width < 64; width++)
 				{
-					textureData[index++] = XMFLOAT4(fade, fade, fade, fade);
+					float d = pow(abs(32 - (int)depth), 2);
+					float h = pow(abs(32 - (int)height), 2);
+					float w = pow(abs(32 - (int)width), 2);
+					float distance = sqrt(d+h+w);
+
+					{
+						distance = (float)55.4256248 - distance;
+						distance = (distance) / 55.4256248;
+					}
+					
+					index = depth * 64 * 64 + height * 64 + width;
+					textureData[index] = XMFLOAT4(distance, 0, 0, 0);
+
 				}
 			}
 		}
@@ -336,7 +346,7 @@ void Clouds::DrawCloudEditor()
 
 	ImGui::Text("Ray March Samples    ");
 	ImGui::SameLine();
-	ImGui::SliderInt("##RayMarchSamples", &rayMarchSamples, 0, 100);
+	ImGui::SliderInt("##RayMarchSamples", &rayMarchSamples, 0, 1000);
 
 	ImGui::Text("Max Ray March Samples");
 	ImGui::SameLine();
@@ -352,39 +362,39 @@ void Clouds::DrawCloudEditor()
 
 	ImGui::Text("Density Scale        ");
 	ImGui::SameLine();
-	ImGui::SliderFloat("##DensityScale", &densityScale, 0, 20.0f);
+	ImGui::SliderFloat("##DensityScale", &densityScale, 0, 50.0f);
 	
 	ImGui::Text("Density Bias         ");
 	ImGui::SameLine();
-	ImGui::SliderFloat("##DensityBias", &densityBias, 0, 20.0f);
+	ImGui::SliderFloat("##DensityBias", &densityBias, 0, 50.0f);
 
 	ImGui::Text("Density Cutoff       ");
 	ImGui::SameLine();
-	ImGui::SliderFloat("##DensityCutoff", &densityCutoff, 0, 20.0f);
+	ImGui::SliderFloat("##DensityCutoff", &densityCutoff, 0, 50.0f);
 
 	ImGui::Text("Shadow Sample Offset ");
 	ImGui::SameLine();
-	ImGui::SliderFloat("##ShadowSampleOffset", &shadowSampleOffset, 0, 20.0f);
+	ImGui::SliderFloat("##ShadowSampleOffset", &shadowSampleOffset, 0, 50.0f);
 
 	ImGui::Text("Volume Sampling Scale");
 	ImGui::SameLine();
-	ImGui::SliderFloat("##VolumeSamplingScale", &volumeSamplingScale, 0, 20.0f);
+	ImGui::SliderFloat("##VolumeSamplingScale", &volumeSamplingScale, 0, 50.0f);
 
-	float aabbMin = AABBMin.x;
+	float aabbMin[3] = { AABBMin.x, AABBMin.y, AABBMin.z };
 	
 	ImGui::Text("AABB Min             ");
 	ImGui::SameLine();
-	ImGui::SliderFloat("##AABBMin", &aabbMin, 0, 10.0f);
+	ImGui::SliderFloat3("##AABBMin", aabbMin, -5.0f, 5.0f);
 
-	AABBMin = XMFLOAT3(aabbMin, aabbMin, aabbMin);
+	AABBMin = XMFLOAT3(aabbMin[0], aabbMin[1], aabbMin[2]);
 
-	float aabbMax = AABBMax.x;
+	float aabbMax[3] = { AABBMax.x, AABBMax.y, AABBMax.z };
 
 	ImGui::Text("AABB Max             ");
 	ImGui::SameLine();
-	ImGui::SliderFloat("##AABBMax", &aabbMax, 0, 100.0f);
+	ImGui::SliderFloat3("##AABBMax", aabbMax, -5.0f, 5.0f);
 
-	AABBMax = XMFLOAT3(aabbMax, aabbMax, aabbMax);
+	AABBMax = XMFLOAT3(aabbMax[0], aabbMax[1], aabbMax[2]);
 
 	float fog[2] = { fogColor.x, fogColor.w };
 

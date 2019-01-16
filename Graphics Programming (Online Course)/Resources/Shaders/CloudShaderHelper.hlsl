@@ -6,7 +6,7 @@ float SampleShadowAmount(int numSamples, float3 pos, float3 lightDir, float step
 	float3 stepDir = lightDir * step;
 
 	[unroll]
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 50; i++)
 	{
 		pos += stepDir;
 		float shadowSample = (volume.Sample(basicSampler, float4(pos, 0)).r * scale + bias) * fade;

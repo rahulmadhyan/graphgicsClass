@@ -225,7 +225,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	
 	water->Render(context, waterEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix(), water->GetReflectionMatrix(), refractionTexture->GetShaderResourceView(), reflectionTexture->GetShaderResourceView(), mainCamera.GetPosition(), dLight1.Direction);
 	
-	clouds->Render(deltaTime, mainCamera.GetPosition(), cloudEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
+	//clouds->Render(deltaTime, mainCamera.GetPosition(), cloudEntity->GetWorldMatrix(), mainCamera.GetViewMatrix(), mainCamera.GetProjectionMatrix());
 
 	GUI::getInstance()->Draw();
 

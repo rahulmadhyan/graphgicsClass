@@ -279,6 +279,51 @@ HRESULT DXCore::InitDirectX()
 	viewport.MaxDepth	= 1.0f;
 	context->RSSetViewports(1, &viewport);
 
+	D3D11_BLEND_DESC blendStateDescription;
+	ZeroMemory(&blendStateDescription, sizeof(blendStateDescription));
+	blendStateDescription.RenderTarget[0].BlendEnable = TRUE;
+	blendStateDescription.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+	blendStateDescription.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	blendStateDescription.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	blendStateDescription.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	blendStateDescription.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	blendStateDescription.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	blendStateDescription.RenderTarget[0].RenderTargetWriteMask = 0x0f;
+
+	device->CreateBlendState(&blendStateDescription, &alphaEnableBlendState);
+
+	blendStateDescription.RenderTarget[0].BlendEnable = FALSE;
+
+	device->CreateBlendState(&blendStateDescription, &alphaDisableBlendState);
+
+	D3D11_RASTERIZER_DESC rasterDescription;
+	rasterDescription.AntialiasedLineEnable = false;
+	rasterDescription.CullMode = D3D11_CULL_BACK;
+	rasterDescription.DepthBias = 0;
+	rasterDescription.DepthBiasClamp = 0.0f;
+	rasterDescription.DepthClipEnable = true;
+	rasterDescription.FillMode = D3D11_FILL_SOLID;
+	rasterDescription.FrontCounterClockwise = false;
+	rasterDescription.MultisampleEnable = false;
+	rasterDescription.ScissorEnable = false;
+	rasterDescription.SlopeScaledDepthBias = 0.0f;
+
+	device->CreateRasterizerState(&rasterDescription, &noCullRasterState);
+
+	// Setup a raster description which turns off back face culling.
+	rasterDescription.AntialiasedLineEnable = false;
+	rasterDescription.CullMode = D3D11_CULL_FRONT;
+	rasterDescription.DepthBias = 0;
+	rasterDescription.DepthBiasClamp = 0.0f;
+	rasterDescription.DepthClipEnable = true;
+	rasterDescription.FillMode = D3D11_FILL_SOLID;
+	rasterDescription.FrontCounterClockwise = false;
+	rasterDescription.MultisampleEnable = false;
+	rasterDescription.ScissorEnable = false;
+	rasterDescription.SlopeScaledDepthBias = 0.0f;
+
+	device->CreateRasterizerState(&rasterDescription, &frontCullRasterState);
+
 	ImGui_ImplDX11_Init(device, context);
 
 	// Return the "everything is ok" HRESULT value

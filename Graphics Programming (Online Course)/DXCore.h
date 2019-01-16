@@ -65,6 +65,12 @@ protected:
 	ID3D11Device*			device;
 	ID3D11DeviceContext*	context;
 
+	ID3D11RasterizerState* noCullRasterState;
+	ID3D11RasterizerState* frontCullRasterState;
+
+	ID3D11BlendState* alphaEnableBlendState;
+	ID3D11BlendState* alphaDisableBlendState;
+
 	ID3D11RenderTargetView* backBufferRTV;
 	ID3D11DepthStencilView* depthStencilView;
 

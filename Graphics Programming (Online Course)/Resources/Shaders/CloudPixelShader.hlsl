@@ -26,17 +26,15 @@ cbuffer cloudBuffer : register(b1)
 struct VertexToPixel
 {
 	float4 position  : SV_POSITION;
-	float4 positionW : POSITION;
+	float3 positionW : POSITION;
 	float2 uv		 : TEXCOORD;
 	float3 normal	 : NORMAL;
 };
 
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	//float3 totalColor = densityTexture.Sample(basicSampler, float3(input.uv, 0.0f));
-
 	// view direction
-	float3 dir = normalize(input.positionW.xyz - cameraPosition);
+	float3 dir = normalize(input.positionW - cameraPosition);
 
 	float nearHit;
 	float farHit;
@@ -71,7 +69,7 @@ float4 main(VertexToPixel input) : SV_TARGET
 	// total color from ray march
 	float4 totalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-	float3 timeOffset = float3(deltaTime, 0.0f, 0.0f);
+	float3 timeOffset = float3(deltaTime, 0, 0);
 
 	//// Grab the depth along this ray
 	//// LinerEyeDepth ?
@@ -92,8 +90,8 @@ float4 main(VertexToPixel input) : SV_TARGET
 		float density = densitySample.r;
 
 		// seperate fade sample without scrolling
-		float4 fadeSample = fadeTexture.SampleLevel(basicSampler, currentPosition, 0);
-		float fade = fadeSample.a;
+		float4 fadeSample = fadeTexture.Sample(basicSampler, currentPosition);
+		float fade = fadeSample.r;
 
 		// adjust by fade
 		density *= fade;
